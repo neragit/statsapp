@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -158,15 +159,25 @@ export default function samplingFireflies() {
         onMouseUp={() => setIsDragging(false)}
         onMouseLeave={() => setIsDragging(false)}
         onMouseMove={handleCatch}
-        onTouchStart={() => {
-          setIsDragging(true);
-          setIsTouching(true);
-        }}
-        onTouchEnd={() => {
-          setIsDragging(false);
-          setIsTouching(false);
-        }}
-        onTouchMove={e => handleCatch(e, true)} 
+        onTouchStart={e => {
+    if (!isTouching) {      // only start dragging if not touching UI
+      setIsDragging(true);
+      setIsTouching(true);
+      e.preventDefault();   // prevent scroll when dragging
+    }
+  }}
+  onTouchMove={e => {
+    if (isDragging) {
+      e.preventDefault();   // still prevent scroll while dragging
+      handleCatch(e, true);
+    }
+  }}
+  onTouchEnd={() => {
+  setIsDragging(false);
+  setIsTouching(false);
+  setMousePos(null); 
+}}
+
 
       >
         {fireflies.map(f => (
@@ -288,7 +299,7 @@ export default function samplingFireflies() {
                   Good sample is <b>representative</b>. This means that each firefly has to have an <b>equal chance</b> of getting sampled.
                   <br /><br />Best way to get a good sample?
                   <br /><b>Randomization</b> reduces sampling bias. Errors do not matter so much when they are <b>equally distributed</b>.
-                  <br /><br />It also needs be large enough to capture the diversity of the population (can't have just one blue firefly, eh?)
+                  <br /><br />It also needs to be large enough to capture the diversity of the population (can't have just one blue firefly, eh?).
                 </div>
                 <button
                     className="link-button"

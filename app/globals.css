@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -19,8 +19,291 @@
   }
 }
 
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Mukta;
 }
+
+input::placeholder {
+  color: #ffffff;   /* true white */
+  opacity: 1;       /* override browser default dimming */
+}
+
+html, body, #__next {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: mukta;
+  background: #000;
+  color: white;
+}
+
+/* Home page layout */
+.home {
+  padding: 2rem;
+  font-family: mukta;
+  align-items: center;
+}
+
+.home-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.home-description {
+  margin-bottom: 2rem;
+}
+
+/* Link list */
+.home-links {
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+  padding: 1rem 2rem;
+  color: white;
+  border-radius: 0.5rem;
+  text-align: center;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+/* Shared button-style link */
+.home-link {
+  padding: 1rem 2rem;
+  background-color: #4f46e5;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.home-link:hover {
+  background-color: #4338ca;
+}
+
+
+.firefly-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.firefly {
+  position: absolute;
+  z-index: 1;
+  background-color: currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+.histogram-wrapper {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.histogram-bars {
+  width: 200px;
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-evenly;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.histogram-bar {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.description-text {
+  margin: 15px;
+  font-size: 16px;
+  text-align: center;
+  text-shadow: 0 0 10px #f9d71c;
+  pointer-events: none;
+}
+
+.sample-text {
+  margin-top: 15px;
+  font-size: 16px;
+  text-align: center;
+  pointer-events: none;
+  text-align: left;
+}
+
+.button {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 15px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  background-color: rgba(0,0,0,0.5);
+  box-shadow: 0 0 5px #ffe;
+  pointer-events: auto;
+}
+
+.link-button {
+  margin-top: 15px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 15px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  background-color: rgba(0,0,0,0.5);
+  box-shadow: 0 0 5px #ffe;
+  pointer-events: auto;
+}
+
+.top-right-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 20;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 50px;
+  border: none;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 0 5px #ffe;
+  pointer-events: auto;
+}
+
+.top-left-box {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 20;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: white;
+  background-color: rgba(0,0,0,0.8);
+  box-shadow: 0 0 15px rgba(255,255,255,0.05), 0 0 10px rgba(0,0,0,0.2);
+  border-radius: 15px;
+  text-shadow: 0 0 2px #f9d71c;
+  pointer-events: none;
+}
+
+
+
+/* Mobile: stack top-right above top-left and center */
+@media (max-width: 768px) {
+  .top-buttons {
+    flex-direction: column;   /* stack vertically */
+    align-items: center;      /* center horizontally */
+    width: 80vw;              /* optional: limit width */
+  }
+
+  .top-right-button,
+  .top-left-box {
+    position: relative;
+    left: 10vw;
+    width: 100%; /* or width: auto if you want text-sized width */
+    margin-bottom: 5vw;
+    z-index: 100;
+  }
+
+  .histogram-wrapper {
+    position: fixed;        /* fix to viewport */
+    bottom: 10px;           /* distance from bottom */
+    left: 50%;              /* center horizontally */
+    transform: translateX(-50%); /* center using transform */
+    width: auto;            /* optional: shrink to content */
+    display: flex;
+    flex-direction: column; /* stack bars, text, and button vertically */
+    align-items: center;    /* center content horizontally */
+    gap: 5px;               /* spacing between bars, text, and button */
+    z-index: 2;            /* make sure it's above other elements */
+  }
+
+  .description-text, .button {
+    text-align: center;
+  }
+
+  .feedback-text {
+    text-align: left;
+  }
+
+  .link-button, .button {
+  padding: 5px 7px 5px 7px; /* top right bottom left */
+  margin-bottom: 10px;
+}
+
+
+}
+
+
+.label-container {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.radio-circle {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ffc;
+  margin-right: 8px;
+  position: relative;
+  pointer-events: auto;
+}
+
+.radio-circle.selected {
+  box-shadow: 0 0 10px #ffc;
+}
+
+.radio-inner {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ffc;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.feedback-text {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  font-size: 12px;
+  color: #ffe;
+}
+
+
+.cursor-circle {
+  position: fixed;
+  border-radius: 50%;
+  border: 2px solid black;
+  background-color: transparent;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 0 8px rgba(255, 255, 238, 0.8);
+}
+

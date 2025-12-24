@@ -201,24 +201,15 @@ html, body, #__next {
   padding: 12px 16px;
   font-size: 14px;
   color: white;
-  /* gradient background */
-  background: 
-  linear-gradient(
-    to right, 
-    rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.0) 100%),
-  linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.0) 0%,   /* top is transparent */
-    rgba(0,0,0,0.8) 50%,  /* middle is darkest */
-    rgba(0,0,0,0.0) 100%  /* bottom is transparent */
-  );
-
-
-border-radius: 15px;
-  pointer-events: none; /* allow touch / scroll */
-  max-height: 80vh; /* optional if content might overflow */
-  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.0) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.0) 100%);
+  border-radius: 15px;
+  pointer-events: none;
+  max-height: 80vh;
+  -webkit-overflow-scrolling: touch;
 }
+
 
 
 

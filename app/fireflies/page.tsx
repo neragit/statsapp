@@ -16,90 +16,106 @@ type Firefly = {
 const COLORS = ['#f9d71c', '#ff6f61', '#6af59c', '#6bb0ff', '#ff9ff3'];
 const FIREFLY_SIZE = 12;
 const HIT_RADIUS = 20;
+const HIT_RADIUS_SQ = HIT_RADIUS * HIT_RADIUS;
 
-export default function samplingFireflies() {
+export default function SamplingFireflies() {
   const [fireflies, setFireflies] = useState<Firefly[]>([]);
+  const firefliesRef = useRef<Firefly[]>([]); // ✅ animation without recreating objects
+
   const [histCounts, setHistCounts] = useState<number[]>([0, 0, 0, 0, 0]);
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [isDragging, setIsDragging] = useState(false);
+  const mousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const [, forceRender] = useState(0); // only to show/hide cursor
+
   const [userAnswer, setUserAnswer] = useState('');
   const [biasAnswer, setBiasAnswer] = useState('');
   const [sizeAnswer, setSizeAnswer] = useState('');
   const [exactAnswer, setExactAnswer] = useState('');
   const [showPercent, setShowPercent] = useState(false);
   const [showGoodSample, setShowGoodSample] = useState(false);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const router = useRouter();
   const [isTouching, setIsTouching] = useState(false);
 
-
+  const router = useRouter();
   const totalCollected = histCounts.reduce((a, b) => a + b, 0);
 
+  /* -------------------- INIT -------------------- */
   useEffect(() => {
     if (!containerRef.current) return;
     const { clientWidth: width, clientHeight: height } = containerRef.current;
-    const initialFireflies: Firefly[] = Array.from({ length: 100 }).map((_, i) => ({
+
+    const initial: Firefly[] = Array.from({ length: 100 }).map((_, i) => ({
       id: i,
       x: Math.random() * width,
       y: Math.random() * height,
       dx: (Math.random() - 0.5) * 1.5,
       dy: (Math.random() - 0.5) * 1.5,
       size: Math.random() * 4 + 2,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
     }));
-    setFireflies(initialFireflies);
+
+    firefliesRef.current = initial;
+    setFireflies(initial);
   }, []);
 
+  /* -------------------- ANIMATION LOOP (30 FPS) -------------------- */
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!containerRef.current) return;
-      setFireflies(prev => prev.map(f => ({ ...f, x: f.x + f.dx, y: f.y + f.dy })));
+      firefliesRef.current.forEach(f => {
+        f.x += f.dx;
+        f.y += f.dy;
+      });
+      setFireflies([...firefliesRef.current]); // cheap shallow copy
     }, 30);
+
     return () => clearInterval(interval);
   }, []);
 
-  const handleCatch = (e: React.MouseEvent | React.TouchEvent, isTouch = false) => {
-  if (!containerRef.current) return;
+  /* -------------------- CATCH LOGIC -------------------- */
+  const handleCatch = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!containerRef.current) return;
 
-  const rect = containerRef.current.getBoundingClientRect();
+    const rect = containerRef.current.getBoundingClientRect();
+    const clientX =
+      'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY =
+      'touches' in e ? e.touches[0].clientY : e.clientY;
 
-  // Get coordinates for mouse or touch
-  let clientX: number, clientY: number;
-  if ('touches' in e) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
+    mousePosRef.current = { x: clientX, y: clientY };
 
-  const mouseX = clientX - rect.left;
-  const mouseY = clientY - rect.top;
+    if (!isDragging) return;
 
-  setMousePos({ x: clientX, y: clientY });
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
 
-  if (!isDragging) return;
+    const removed: Firefly[] = [];
 
-  const removedIds = fireflies
-    .filter(f => Math.hypot(f.x + f.size - mouseX, f.y + f.size - mouseY) <= HIT_RADIUS)
-    .map(f => f.id);
-
-  if (!removedIds.length) return;
-
-  setFireflies(prev => prev.filter(f => !removedIds.includes(f.id)));
-  setHistCounts(prev => {
-    const newCounts = [...prev];
-    fireflies.forEach(f => {
-      if (removedIds.includes(f.id)) {
-        const idx = COLORS.indexOf(f.color);
-        if (idx >= 0) newCounts[idx] += 1;
+    firefliesRef.current = firefliesRef.current.filter(f => {
+      const dx = f.x + f.size - mx;
+      const dy = f.y + f.size - my;
+      if (dx * dx + dy * dy <= HIT_RADIUS_SQ) {
+        removed.push(f);
+        return false;
       }
+      return true;
     });
-    return newCounts;
-  });
-};
 
+    if (!removed.length) return;
 
+    setFireflies([...firefliesRef.current]);
+
+    setHistCounts(prev => {
+      const next = [...prev];
+      removed.forEach(f => {
+        const idx = COLORS.indexOf(f.color);
+        if (idx >= 0) next[idx]++;
+      });
+      return next;
+    });
+  };
+
+  /* -------------------- UI HELPERS -------------------- */
   const Bubble = ({ color, size }: { color: string; size: number }) => (
     <div
       style={{
@@ -107,42 +123,48 @@ export default function samplingFireflies() {
         height: size,
         borderRadius: '50%',
         backgroundColor: color,
-        boxShadow: `0 0 10px ${color}, 0 0 20px ${color}`
+        boxShadow: `0 0 10px ${color}, 0 0 20px ${color}`,
       }}
     />
   );
 
-  const renderRadio = (answer: string, setAnswer: (a: string) => void) =>
-    ['yes', 'no'].map(option => (
-      <label key={option} className="label-container">
+const renderRadio = (answer: string, setAnswer: (a: string) => void) => (
+  <div className="inline">
+    {['yes', 'no'].map(option => (
+      <label key={option} className="radio-label"> 
         <span className={`radio-circle ${answer === option ? 'selected' : ''}`}>
           {answer === option && <span className="radio-inner" />}
         </span>
         {option === 'yes' ? 'Yes' : 'No'}
         <input
           type="radio"
-          name="radio"
-          value={option}
           checked={answer === option}
           onChange={() => setAnswer(option)}
           style={{ display: 'none' }}
         />
       </label>
-    ));
+    ))}
+  </div>
+);
 
+
+  /* -------------------- RESET -------------------- */
   const resetSample = () => {
     if (!containerRef.current) return;
     const { clientWidth: width, clientHeight: height } = containerRef.current;
-    const newFireflies: Firefly[] = Array.from({ length: 100 }).map((_, i) => ({
+
+    const fresh: Firefly[] = Array.from({ length: 100 }).map((_, i) => ({
       id: i,
       x: Math.random() * width,
       y: Math.random() * height,
       dx: (Math.random() - 0.5) * 1.5,
       dy: (Math.random() - 0.5) * 1.5,
       size: Math.random() * 4 + 2,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
     }));
-    setFireflies(newFireflies);
+
+    firefliesRef.current = fresh;
+    setFireflies(fresh);
     setHistCounts([0, 0, 0, 0, 0]);
     setUserAnswer('');
     setBiasAnswer('');
@@ -150,56 +172,70 @@ export default function samplingFireflies() {
     setExactAnswer('');
   };
 
+  /* -------------------- RENDER -------------------- */
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <div
         ref={containerRef}
         className="firefly-container"
-        onMouseDown={() => setIsDragging(true)}
-        onMouseUp={() => setIsDragging(false)}
+        onMouseDown={() => {
+          setIsDragging(true);
+          forceRender(n => n + 1);
+        }}
+        onMouseUp={() => {
+          setIsDragging(false);
+          mousePosRef.current = null;
+          forceRender(n => n + 1);
+        }}
         onMouseLeave={() => setIsDragging(false)}
         onMouseMove={handleCatch}
         onTouchStart={e => {
-    if (!isTouching) {      // only start dragging if not touching UI
-      setIsDragging(true);
-      setIsTouching(true);
-      e.preventDefault();   // prevent scroll when dragging
-    }
-  }}
-  onTouchMove={e => {
-    if (isDragging) {
-      e.preventDefault();   // still prevent scroll while dragging
-      handleCatch(e, true);
-    }
-  }}
-  onTouchEnd={() => {
-  setIsDragging(false);
-  setIsTouching(false);
-  setMousePos(null); 
-}}
-
-
+          if (!isTouching) {
+            setIsDragging(true);
+            setIsTouching(true);
+            e.preventDefault();
+            forceRender(n => n + 1);
+          }
+        }}
+        onTouchMove={e => {
+          if (isDragging) {
+            e.preventDefault();
+            handleCatch(e);
+          }
+        }}
+        onTouchEnd={() => {
+          setIsDragging(false);
+          setIsTouching(false);
+          mousePosRef.current = null;
+          forceRender(n => n + 1);
+        }}
       >
         {fireflies.map(f => (
           <div
             key={f.id}
             className="firefly"
-            style={{ left: f.x, top: f.y, width: f.size * 2, height: f.size * 2, color: f.color }}
+            style={{
+              transform: `translate3d(${f.x}px, ${f.y}px, 0)`,
+              width: f.size * 2,
+              height: f.size * 2,
+              color: f.color,
+            }}
           />
         ))}
       </div>
 
-      {isTouching || mousePos && (
-      <div
-        className="cursor-circle"
-        style={{
-          left: mousePos.x - HIT_RADIUS,
-          top: mousePos.y - HIT_RADIUS,
-          width: HIT_RADIUS * 2,
-          height: HIT_RADIUS * 2,
-        }}
-      />
-    )}
+      {mousePosRef.current && (
+        <div
+          className="cursor-circle"
+          style={{
+            transform: `translate3d(${mousePosRef.current.x - HIT_RADIUS}px, ${mousePosRef.current.y - HIT_RADIUS}px, 0)`,
+            width: HIT_RADIUS * 2,
+            height: HIT_RADIUS * 2,
+          }}
+        />
+      )}
+
+
 
 
       <div className="histogram-wrapper">
@@ -211,7 +247,7 @@ export default function samplingFireflies() {
               ))}
               {showPercent && totalCollected > 0 && (
                 <div
-                  className="feedback-text"
+                  className="text-sm"
                   style={{ color: COLORS[colorIndex], textShadow: `0 0 10px ${COLORS[colorIndex]}` }}
                 >
                   {((count / totalCollected) * 100).toFixed(0)}%
@@ -220,22 +256,25 @@ export default function samplingFireflies() {
             </div>
           ))}
         </div>
-        <div className="description-text">Collected Sample</div>
-        <button className="button" onClick={() => setShowPercent(prev => !prev)}>
+        <div className="text-md">Collected Sample</div>
+        <button className="button btn-sm" onClick={() => setShowPercent(prev => !prev)}>
           {showPercent ? 'Hide proportions' : 'Show proportions'}
         </button>
       </div>
 
-      <div className="top-buttons">
-        <button className="top-right-button" onClick={resetSample}>
+      <div className="top-mobile">
+        <button className="button btn-md top-right" onClick={resetSample}>
           Collect Another Sample
         </button>
 
         <div className="top-left-box">
-          <div style={{ marginBottom: 12 }}>Are firefly colors equal every time you sample them?</div>
-          {renderRadio(userAnswer, setUserAnswer)}
+          <div >Are firefly colors equal every time you sample them?</div>
+          <div className="inline">
+            {renderRadio(userAnswer, setUserAnswer)}
+          </div>
+          
           {userAnswer && (
-            <div className="feedback-text">
+            <div className="text-sm">
               {userAnswer === 'no'
                 ? '✅ Congrats, you experienced sampling variability!'
                 : '❌ Every time you sampled? Try again.'}
@@ -244,10 +283,12 @@ export default function samplingFireflies() {
 
           {userAnswer === 'no' && (
             <>
-              <div style={{ marginTop: 12, marginBottom: 8 }}>Did you try to catch specific fireflies?</div>
-              {renderRadio(biasAnswer, setBiasAnswer)}
+              <div >Did you try to catch specific fireflies?</div>
+              <div className="inline">
+                {renderRadio(biasAnswer, setBiasAnswer)}
+              </div>
               {biasAnswer && (
-                <div className="feedback-text">
+                <div className="text-sm">
                   {biasAnswer === 'yes'
                     ? "✅ That's sampling bias. Did you aim for a specific color?"
                     : 'Collect another sample.'}
@@ -258,12 +299,14 @@ export default function samplingFireflies() {
 
           {biasAnswer === 'yes' && (
             <>
-              <div style={{ marginTop: 12, marginBottom: 8 }}>
+              <div >
                 If you catch more fireflies, does that describe the population better?
               </div>
-              {renderRadio(sizeAnswer, setSizeAnswer)}
+              <div className="inline">
+                {renderRadio(sizeAnswer, setSizeAnswer)}
+              </div>
               {sizeAnswer && (
-                <div className="feedback-text">
+                <div className="text-sm">
                   {sizeAnswer === 'yes'
                     ? '✅ Exactly! Larger samples are usually more representative.'
                     : 'Are you sure?'}
@@ -274,13 +317,15 @@ export default function samplingFireflies() {
 
           {sizeAnswer === 'yes' && (
             <>
-              <div style={{ marginTop: 12, marginBottom: 8 }}>
+              <div >
                 Can your sample tell you exactly how many fireflies of each color there are if you knew there are 100
                 in total?
               </div>
-              {renderRadio(exactAnswer, setExactAnswer)}
+              <div className="inline">
+                {renderRadio(exactAnswer, setExactAnswer)}
+              </div>
               {exactAnswer && (
-                <div className="feedback-text">
+                <div className="text-sm">
                   {exactAnswer === 'no'
                     ? '✅ You can approximate, but not exactly. Statistics always has some uncertainty.'
                     : 'Samples rarely match perfectly. Statistics helps us see patterns despite uncertainty.'}
@@ -291,22 +336,18 @@ export default function samplingFireflies() {
 
           {exactAnswer === 'no' && (
             <>
-              <button className="button" onClick={() => setShowGoodSample(prev => !prev)}>
+              <button 
+              className="button btn-sm no-stretch" 
+              style={{ marginTop: '1rem' }}
+              onClick={() => setShowGoodSample(prev => !prev)}>
                 {showGoodSample ? 'Too much info?' : 'How to get a good sample?'}
               </button>
               {showGoodSample && (
-                <div><div className="sample-text">
+                <div><div >
                   Good sample is <b>representative</b>. This means that each firefly has to have an <b>equal chance</b> of getting sampled.
-                  <br /><br />Best way to get a good sample?
                   <br /><b>Randomization</b> reduces sampling bias. Errors do not matter so much when they are <b>equally distributed</b>.
-                  <br /><br />It also needs to be large enough to capture the diversity of the population (can't have just one blue firefly, eh?).
+                  <br />It also needs to be large enough to capture the diversity of the population (can't have just one blue firefly, eh?).
                 </div>
-                <button
-                    className="link-button"
-                    onClick={() => router.push('/random')}
-                  >
-                    Random Sample
-                  </button>
                   </div>
               )}
             </>

@@ -114,7 +114,7 @@ export default function ParticleBackground() {
         };
       };
 
-      p5Instance = new p5(sketch, containerRef.current);
+      p5Instance = new p5(sketch, containerRef.current!);
     });
 
     return () => {

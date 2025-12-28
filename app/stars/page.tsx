@@ -46,6 +46,7 @@ export default function Page() {
 
   const [draggingStarId, setDraggingStarId] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  
 
   const getSVGPoint = (
     event: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>

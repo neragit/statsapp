@@ -424,7 +424,7 @@ export default function Page() {
 
       <div
         className="feedback-container"
-        style={{ "--graph-size": `${GRAPH_SIZE}px` }}
+        style={{ ['--graph-size' as keyof React.CSSProperties]: `${GRAPH_SIZE}px` }}
       >
         <button
           className={`button btn-md ${showFeedback ? "button-border" : ""}`}

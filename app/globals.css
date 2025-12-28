@@ -31,7 +31,6 @@ input::placeholder {
 html,
 body,
 #__next {
-  position: fixed;
   margin: 0;
   padding: 0;
   width: 100%;

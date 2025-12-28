@@ -10,6 +10,7 @@ interface StarData {
   y: number;
 }
 
+const isMobile = window.innerWidth <= 768;
 
 const STAR_SIZE = 30;
 const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
@@ -683,11 +684,21 @@ export default function Page() {
       {/* axis */}
 
       <button className="axis-label"
-        style={{
-          position: "absolute",
-          left: `calc(50% - ${graphSize / 2}px - 7rem)`,
-          top: `calc(50% - ${graphSize / 2}px + 5px)`,
-        }}
+        style={
+          isMobile
+            ? {
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(130px, -50%) rotate(-90deg)",
+            }
+            : {
+              position: "absolute",
+              left: `calc(50% - ${graphSize / 2}px - 7rem)`,
+              top: `calc(50% - ${graphSize / 2}px + 5px)`,
+            }
+
+        }
         onClick={() =>
           setYAxisLabel((p) => (p === "y axis" ? "Temperature" : "y axis"))
         }
@@ -696,11 +707,21 @@ export default function Page() {
       </button>
 
       <button className="axis-label"
-        style={{
+        style={
+          isMobile
+      ? {
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, 160px)",
+        }
+      : {
           position: "absolute",
           left: `calc(50% + ${graphSize / 2}px - 2rem)`,
           top: `calc(50% + ${graphSize / 2}px + 1rem)`,
-        }}
+        }
+
+        }
         onClick={() =>
           setXAxisLabel((p) => (p === "x axis" ? "Age" : "x axis"))
         }

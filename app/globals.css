@@ -570,7 +570,15 @@ input[type="range"]::-moz-range-thumb:active {
 
 
   .slider-container {
-    bottom: 20rem;
+    transform: translate(-50%, 40px);
   }
 
+  .feedback-container {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    align-items: center;
+    margin-top: 1rem;
+  }
 }

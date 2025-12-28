@@ -512,7 +512,7 @@ export default function Page() {
 
       {/* middle graph */}
 
-      <svg className="notranslate" translate="no"
+      <svg className="notranslate"
         ref={svgRef}
         width={GRAPH_SIZE}
         height={GRAPH_SIZE}

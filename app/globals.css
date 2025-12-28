@@ -38,6 +38,7 @@ body,
   font-family: 'Mukta', sans-serif;
   background: var(--background);
   color: var(--foreground);
+  overflow: hidden;
 }
 
 /* Home page  */
@@ -309,68 +310,7 @@ body,
   transform: translate(-50%, -50%);
 }
 
-@media (max-width: 768px) {
-  .top-mobile {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-  }
 
-  .top-right,
-  .top-left-box {
-    position: relative;
-    z-index: 100;
-    pointer-events: auto;
-    width: 100vw;
-  }
-
-  .top-right {
-    left: 25vw;
-    width: 50vw;
-  }
-
-  .top-left-box {
-    text-align: left;
-    top: 2.7rem;
-    left: 0;
-    padding-left: 10vw;
-    overflow-y: auto;
-    /* allow scroll if content overflows */
-  }
-
-  .link-button {
-    margin-bottom: 260px;
-  }
-
-
-  .histogram-wrapper {
-    position: fixed;
-    left: 50%;
-    bottom: 1.5rem;
-    transform: translateX(-50%);
-    z-index: 2;
-  }
-
-  .responsive-graph {
-    width: 350px;
-    height: 350px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .page-title {
-    left: 0;
-    width: 100%;
-    text-align: center;
-    font-size: 30px;
-  }
-
-
-  .slider-container {
-    bottom: 20rem;
-  }
-
-}
 
 
 .cursor-circle {
@@ -564,4 +504,69 @@ input[type="range"]::-moz-range-thumb:hover,
 input[type="range"]::-moz-range-thumb:focus,
 input[type="range"]::-moz-range-thumb:active {
   background: #666;
+}
+
+
+
+@media (max-width: 768px) {
+  .top-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .top-right,
+  .top-left-box {
+    position: relative;
+    z-index: 100;
+    pointer-events: auto;
+    width: 100vw;
+  }
+
+  .top-right {
+    left: 25vw;
+    width: 50vw;
+  }
+
+  .top-left-box {
+    text-align: left;
+    top: 2.7rem;
+    left: 0;
+    padding-left: 10vw;
+    overflow-y: auto;
+    /* allow scroll if content overflows */
+  }
+
+  .link-button {
+    margin-bottom: 260px;
+  }
+
+
+  .histogram-wrapper {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  .responsive-graph {
+    width: 350px;
+    height: 350px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .page-title {
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 30px;
+  }
+
+
+  .slider-container {
+    bottom: 20rem;
+  }
+
 }

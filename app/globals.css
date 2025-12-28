@@ -332,8 +332,8 @@ z-index: 20;
   }
 
   .responsive-graph {
-    max-width: 90vw;
-    max-height: 90vw;
+    max-width: 300px;
+    height: 300px;
   }
 
 }

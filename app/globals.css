@@ -553,14 +553,15 @@ input[type="range"]::-moz-range-thumb:active {
   .responsive-graph {
     width: 90vw;
     height: 90vw;
-    max-width: 380px;   /* safety cap */
+    max-width: 380px;
+    /* safety cap */
     max-height: 380px;
     margin: 0 auto;
     display: block;
   }
 
   .page-title {
-    transform: none; 
+    transform: none;
     left: 0;
     width: 100%;
     text-align: center;

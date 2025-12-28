@@ -20,16 +20,15 @@ export default function Page() {
 
   useEffect(() => {
     const updateSize = () => {
-      if (window.innerWidth <= 768) {
-        setGraphSize(250); // mobile size
-      } else {
-        setGraphSize(500); // desktop size
-      }
+      const size = Math.min(window.innerWidth * 0.9, 500);
+      setGraphSize(size);
     };
+
+    updateSize();
     window.addEventListener("resize", updateSize);
-    updateSize(); // initial check
     return () => window.removeEventListener("resize", updateSize);
   }, []);
+
 
   //initializing stars and handling drag
 
@@ -42,11 +41,11 @@ export default function Page() {
       y: graphSize / 2 + (Math.random() - 0.5) * graphSize,
     }));
     setStars(initialStars);
-  }, []);
+  }, [graphSize]);
 
   const [draggingStarId, setDraggingStarId] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  
+
 
   const getSVGPoint = (
     event: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>

@@ -10,14 +10,22 @@ interface StarData {
   y: number;
 }
 
-const isMobile = window.innerWidth <= 768;
-
 const STAR_SIZE = 30;
 const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
 
 export default function Page() {
 
   const [graphSize, setGraphSize] = useState(500);
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
 
   useEffect(() => {
     const updateSize = () => {
@@ -709,17 +717,17 @@ export default function Page() {
       <button className="axis-label"
         style={
           isMobile
-      ? {
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, 160px)",
-        }
-      : {
-          position: "absolute",
-          left: `calc(50% + ${graphSize / 2}px - 2rem)`,
-          top: `calc(50% + ${graphSize / 2}px + 1rem)`,
-        }
+            ? {
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, 160px)",
+            }
+            : {
+              position: "absolute",
+              left: `calc(50% + ${graphSize / 2}px - 2rem)`,
+              top: `calc(50% + ${graphSize / 2}px + 1rem)`,
+            }
 
         }
         onClick={() =>

@@ -514,8 +514,11 @@ export default function Page() {
 
       <svg className="notranslate"
         ref={svgRef}
-        width={GRAPH_SIZE}
-        height={GRAPH_SIZE}
+        style={{
+          width: "80vw",
+          maxWidth: "500px",
+          height: "auto",
+        }}
         onMouseMove={handleMove}
         onMouseUp={handleDragEnd}
 

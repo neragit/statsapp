@@ -333,7 +333,7 @@ z-index: 20;
 
   .responsive-graph {
     max-width: 90vw;
-    max-height: 50hw;
+    max-height: 50vh;
   }
 
 }

@@ -331,6 +331,10 @@ z-index: 20;
     z-index: 2;
   }
 
+  .responsive-graph {
+    width: 90vw;      /* shrink on small screens */
+  }
+
 }
 
 

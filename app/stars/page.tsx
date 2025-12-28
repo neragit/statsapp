@@ -512,13 +512,10 @@ export default function Page() {
 
       {/* middle graph */}
 
-      <svg className="notranslate"
+      <svg className="notranslate responsive-graph"
         ref={svgRef}
-        style={{
-          width: "80vw",
-          maxWidth: "500px",
-          height: "auto",
-        }}
+        width={GRAPH_SIZE}
+        height={GRAPH_SIZE}
         onMouseMove={handleMove}
         onMouseUp={handleDragEnd}
 

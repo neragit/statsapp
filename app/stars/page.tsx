@@ -10,11 +10,26 @@ interface StarData {
   y: number;
 }
 
-const GRAPH_SIZE = 500;
+
 const STAR_SIZE = 30;
 const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
 
 export default function Page() {
+
+  const [graphSize, setGraphSize] = useState(500);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (window.innerWidth <= 768) {
+        setGraphSize(250); // mobile size
+      } else {
+        setGraphSize(500); // desktop size
+      }
+    };
+    window.addEventListener("resize", updateSize);
+    updateSize(); // initial check
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   //initializing stars and handling drag
 
@@ -23,8 +38,8 @@ export default function Page() {
   useEffect(() => {
     const initialStars: StarData[] = Array.from({ length: 10 }, (_, i) => ({
       id: i,
-      x: GRAPH_SIZE / 2 + (Math.random() - 0.5) * GRAPH_SIZE,
-      y: GRAPH_SIZE / 2 + (Math.random() - 0.5) * GRAPH_SIZE,
+      x: graphSize / 2 + (Math.random() - 0.5) * graphSize,
+      y: graphSize / 2 + (Math.random() - 0.5) * graphSize,
     }));
     setStars(initialStars);
   }, []);
@@ -111,23 +126,23 @@ export default function Page() {
 
     diagonal: Array.from({ length: 10 }, (_, i) => ({
       id: i,
-      x: (GRAPH_SIZE / 10) * i + 20,
-      y: (GRAPH_SIZE / 10) * i + 20,
+      x: (graphSize / 10) * i + 20,
+      y: (graphSize / 10) * i + 20,
     })),
 
     outlier: Array.from({ length: 10 }, (_, i) => {
       if (i === 9) {
-        return { id: i, x: GRAPH_SIZE - 50, y: 50 }; // outlier
+        return { id: i, x: graphSize - 50, y: 50 }; // outlier
       }
-      return { id: i, x: (GRAPH_SIZE / 10) * i + 20, y: (GRAPH_SIZE / 10) * i + 20 };
+      return { id: i, x: (graphSize / 10) * i + 20, y: (graphSize / 10) * i + 20 };
     }),
 
     curved: Array.from({ length: 10 }, (_, i) => {
       const numStars = 10;
-      const x = (i + 0.75) * (GRAPH_SIZE / (numStars + 0.25));
+      const x = (i + 0.75) * (graphSize / (numStars + 0.25));
       const maxDrop = 450;
       const rate = 0.009;
-      const y = GRAPH_SIZE - (maxDrop * (1 - Math.exp(-rate * x)));
+      const y = graphSize - (maxDrop * (1 - Math.exp(-rate * x)));
       return { id: i, x, y };
     })
   };
@@ -135,16 +150,16 @@ export default function Page() {
   // calculations
 
   const meanY = stars.length
-    ? stars.reduce((sum, s) => sum + (GRAPH_SIZE - s.y), 0) / stars.length
-    : GRAPH_SIZE / 2;
-  const meanYSVG = GRAPH_SIZE - meanY; // convert back to SVG coords
+    ? stars.reduce((sum, s) => sum + (graphSize - s.y), 0) / stars.length
+    : graphSize / 2;
+  const meanYSVG = graphSize - meanY; // convert back to SVG coords
 
   const computeR = (stars: StarData[]) => {
     const n = stars.length;
     if (n === 0) return 0;
 
     const xs = stars.map((s) => s.x);
-    const ys = stars.map((s) => GRAPH_SIZE - s.y);
+    const ys = stars.map((s) => graphSize - s.y);
 
     const meanX = xs.reduce((a, b) => a + b, 0) / n;
     const meanY = ys.reduce((a, b) => a + b, 0) / n;
@@ -173,7 +188,7 @@ export default function Page() {
     if (n === 0) return { m: 0, b: 0 };
 
     const xs = stars.map((s) => s.x);
-    const ys = stars.map((s) => GRAPH_SIZE - s.y); // invert y-axis for SVG
+    const ys = stars.map((s) => graphSize - s.y); // invert y-axis for SVG
 
     const meanX = xs.reduce((sum, value) => sum + value, 0) / n;
     const meanY = ys.reduce((sum, value) => sum + value, 0) / n;
@@ -200,21 +215,21 @@ export default function Page() {
   const computeResiduals = (stars: StarData[]) => {
     const { m, b } = computeRegressionLine(stars);
     return stars.map((s) => {
-      const y = GRAPH_SIZE - s.y; // invert y-axis for SVG
+      const y = graphSize - s.y; // invert y-axis for SVG
       const yHat = m * s.x + b;
-      return { x: s.x, yActual: GRAPH_SIZE - y, yPred: GRAPH_SIZE - yHat }; // SVG coords
+      return { x: s.x, yActual: graphSize - y, yPred: graphSize - yHat }; // SVG coords
     });
   };
 
   const computeSquaredResiduals = (stars: StarData[]) => {
     const { m, b } = computeRegressionLine(stars);
     return stars.map((s) => {
-      const y = GRAPH_SIZE - s.y; // invert y-axis for SVG
+      const y = graphSize - s.y; // invert y-axis for SVG
       const yHat = m * s.x + b;
       const residual = y - yHat;
       return {
         x: s.x,
-        y: GRAPH_SIZE - yHat, // SVG coordinate at the regression line
+        y: graphSize - yHat, // SVG coordinate at the regression line
         size: residual ** 2,
         direction: residual > 0 ? -1 : 1,
       };
@@ -231,7 +246,7 @@ export default function Page() {
     if (n === 0) return new Map<number, number>();
 
     const xs = stars.map(s => s.x);
-    const ys = stars.map(s => GRAPH_SIZE - s.y);
+    const ys = stars.map(s => graphSize - s.y);
 
     const meanX = xs.reduce((a, b) => a + b, 0) / n;
     const meanY = ys.reduce((a, b) => a + b, 0) / n;
@@ -279,7 +294,7 @@ export default function Page() {
 
     // extract values
     const xs = stars.map(s => s.x);
-    const ys = stars.map(s => GRAPH_SIZE - s.y); // invert y for SVG
+    const ys = stars.map(s => graphSize - s.y); // invert y for SVG
 
     // average ranks for ties
     const rankArray = (arr: number[]) => {
@@ -403,8 +418,8 @@ export default function Page() {
             if (choice === "random") {
               const initialStars: StarData[] = Array.from({ length: 10 }, (_, i) => ({
                 id: i,
-                x: GRAPH_SIZE / 2 + (Math.random() - 0.5) * GRAPH_SIZE,
-                y: GRAPH_SIZE / 2 + (Math.random() - 0.5) * GRAPH_SIZE,
+                x: graphSize / 2 + (Math.random() - 0.5) * graphSize,
+                y: graphSize / 2 + (Math.random() - 0.5) * graphSize,
               }));
               setStars(initialStars);
             } else {
@@ -424,7 +439,7 @@ export default function Page() {
 
       <div
         className="feedback-container"
-        style={{ ['--graph-size' as keyof React.CSSProperties]: `${GRAPH_SIZE}px` }}
+        style={{ ['--graph-size' as keyof React.CSSProperties]: `${graphSize}px` }}
       >
         <button
           className={`button btn-md ${showFeedback ? "button-border" : ""}`}
@@ -514,8 +529,8 @@ export default function Page() {
 
       <svg className="notranslate responsive-graph"
         ref={svgRef}
-        width={GRAPH_SIZE}
-        height={GRAPH_SIZE}
+        width={graphSize}
+        height={graphSize}
         onMouseMove={handleMove}
         onMouseUp={handleDragEnd}
 
@@ -533,7 +548,7 @@ export default function Page() {
           </linearGradient>
 
           <mask id="starMask" maskUnits="userSpaceOnUse">
-            <rect width={GRAPH_SIZE} height={GRAPH_SIZE} fill="white" />
+            <rect width={graphSize} height={graphSize} fill="white" />
             {stars.map((s) => (
               <g
                 key={s.id}
@@ -546,11 +561,11 @@ export default function Page() {
           </mask>
         </defs>
 
-        <rect width={GRAPH_SIZE} height={GRAPH_SIZE} fill="url(#starGradient)" />
-        <rect width={GRAPH_SIZE} height={GRAPH_SIZE} fill="black" mask="url(#starMask)" />
+        <rect width={graphSize} height={graphSize} fill="url(#starGradient)" />
+        <rect width={graphSize} height={graphSize} fill="black" mask="url(#starMask)" />
 
-        <line x1={0} y1={GRAPH_SIZE} x2={GRAPH_SIZE} y2={GRAPH_SIZE} stroke="white" />
-        <line x1={0} y1={GRAPH_SIZE} x2={0} y2={0} stroke="white" />
+        <line x1={0} y1={graphSize} x2={graphSize} y2={graphSize} stroke="white" />
+        <line x1={0} y1={graphSize} x2={0} y2={0} stroke="white" />
 
         {stars.map((s) => (
           <g
@@ -578,8 +593,8 @@ export default function Page() {
 
         {showRegression && (() => {
           const { m, b } = computeRegressionLine(stars);
-          const lineStart = { x: 0, y: GRAPH_SIZE - (m * 0 + b) };
-          const lineEnd = { x: GRAPH_SIZE, y: GRAPH_SIZE - (m * GRAPH_SIZE + b) };
+          const lineStart = { x: 0, y: graphSize - (m * 0 + b) };
+          const lineEnd = { x: graphSize, y: graphSize - (m * graphSize + b) };
           return (
             <line
               x1={lineStart.x}
@@ -636,7 +651,7 @@ export default function Page() {
             <line
               x1={0}
               y1={meanYSVG}
-              x2={GRAPH_SIZE}
+              x2={graphSize}
               y2={meanYSVG}
               stroke="white"
               strokeWidth={1}
@@ -670,8 +685,8 @@ export default function Page() {
       <button className="axis-label"
         style={{
           position: "absolute",
-          left: `calc(50% - ${GRAPH_SIZE / 2}px - 7rem)`,
-          top: `calc(50% - ${GRAPH_SIZE / 2}px + 5px)`,
+          left: `calc(50% - ${graphSize / 2}px - 7rem)`,
+          top: `calc(50% - ${graphSize / 2}px + 5px)`,
         }}
         onClick={() =>
           setYAxisLabel((p) => (p === "y axis" ? "Temperature" : "y axis"))
@@ -683,8 +698,8 @@ export default function Page() {
       <button className="axis-label"
         style={{
           position: "absolute",
-          left: `calc(50% + ${GRAPH_SIZE / 2}px - 2rem)`,
-          top: `calc(50% + ${GRAPH_SIZE / 2}px + 1rem)`,
+          left: `calc(50% + ${graphSize / 2}px - 2rem)`,
+          top: `calc(50% + ${graphSize / 2}px + 1rem)`,
         }}
         onClick={() =>
           setXAxisLabel((p) => (p === "x axis" ? "Age" : "x axis"))

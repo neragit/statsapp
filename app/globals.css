@@ -564,9 +564,12 @@ input[type="range"]::-moz-range-thumb:active {
     height: 90vw;
     max-width: 380px;
     max-height: 380px;
+    display: flex;
   }
 
   .page-title {
+    left: 0;
+    width: 100%;
     transform: none;
     text-align: center;
     font-size: 30px;

@@ -564,7 +564,8 @@ input[type="range"]::-moz-range-thumb:active {
     height: 90vw;
     max-width: 380px;
     max-height: 380px;
-    display: flex;
+    position: relative;
+    margin-top: 1rem; 
   }
 
   .page-title {
@@ -575,10 +576,6 @@ input[type="range"]::-moz-range-thumb:active {
     font-size: 30px;
   }
 
-
-  .slider-container {
-    transform: translate(-50%, 40px);
-  }
 
   .feedback-container {
     position: relative;

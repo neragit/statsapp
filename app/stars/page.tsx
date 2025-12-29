@@ -593,9 +593,16 @@ export default function Page() {
             <path
               d={STAR_PATH}
               fill="transparent"
+              pointerEvents="none"
+              transform={`translate(${-STAR_SIZE / 2}, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24})`}
+            />
+
+            <circle
+              cx={0}
+              cy={0}
+              r={20} // hit
+              fill="transparent"
               pointerEvents="all"
-              transform={`translate(${-STAR_SIZE / 2}, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24
-                })`}
             />
           </g>
         ))}

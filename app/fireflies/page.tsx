@@ -256,7 +256,7 @@ const renderRadio = (answer: string, setAnswer: (a: string) => void) => (
             </div>
           ))}
         </div>
-        <div className="text-md">Collected Sample</div>
+        <div className="">Collected Sample</div>
         <button className="button btn-sm" onClick={() => setShowPercent(prev => !prev)}>
           {showPercent ? 'Hide proportions' : 'Show proportions'}
         </button>
@@ -337,8 +337,7 @@ const renderRadio = (answer: string, setAnswer: (a: string) => void) => (
           {exactAnswer === 'no' && (
             <>
               <button 
-              className="button btn-sm no-stretch" 
-              style={{ marginTop: '1rem' }}
+              className="button btn-sm no-stretch mt-2 mb-10 md:mb-0" 
               onClick={() => setShowGoodSample(prev => !prev)}>
                 {showGoodSample ? 'Too much info?' : 'How to get a good sample?'}
               </button>

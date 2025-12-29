@@ -200,16 +200,6 @@ body,
   text-shadow: 0 0 5px #ffe;
 }
 
-.text-sm {
-  font-size: 14px;
-}
-
-.text-md {
-  font-size: 1rem;
-  text-align: center;
-}
-
-
 
 .feedback-container {
   position: absolute;
@@ -533,8 +523,16 @@ input[type="range"]::-moz-range-thumb:active {
     top: 2.7rem;
     left: 0;
     padding-left: 10vw;
-    overflow-y: auto;
-    /* allow scroll if content overflows */
+    overflow-y: auto; /* allow scroll if content overflows */
+  }
+
+  .feedback-container {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 90%;
+    margin: 1rem auto 0;    /* 1rem top margin, auto horizontal centering */
+    align-items: center;    
   }
 
   .link-button {

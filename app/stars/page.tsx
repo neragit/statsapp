@@ -444,95 +444,7 @@ export default function Page() {
         </select>
       </div>
 
-      {/* left side feedback */}
-
-      <div
-        className="feedback-container"
-        style={{ ['--graph-size' as keyof React.CSSProperties]: `${graphSize}px` }}
-      >
-        <button
-          className={`button btn-md ${showFeedback ? "button-border" : ""}`}
-          onClick={() => setShowFeedback(prev => !prev)}
-        >
-          {showFeedback ? "Hide Feedback" : "Show Feedback"}
-        </button>
-
-        {showFeedback && (
-          <>
-            {distantCondition && (
-              <>
-                <div><strong>How do outliers affect the Pearson correlation coefficient?</strong></div>
-                <div>❗ Pearson r is extremely sensitive to outliers.</div>
-                <div>Is the relationship stronger when squared residuals are smaller?</div>
-                <div>{renderRadio(answerResidual, setAnswerResidual)}</div>
-                {answerResidual === 'yes' && (
-                  <div className="text-sm">✅ Exactly! Data is closer to the regression line.</div>
-                )}
-                {answerResidual === 'no' && (
-                  <div className="text-sm">❌ Are you sure? Look again.</div>
-                )}
-                <div>👁️ Move the distant star closer to the regression line to see how it affects the correlation.</div>
-              </>
-            )}
-
-            {Math.abs(rValue) > 0.5 && hasDominantPoint && !curvedDetected && (
-              <>
-                <div><strong>How do outliers affect the Pearson correlation coefficient?</strong></div>
-                <div>❗ Pearson r is extremely sensitive to outliers.</div>
-                <div>Can one distant star fake a strong correlation?</div>
-                <div>{renderRadio(answerFake, setAnswerFake)}</div>
-                {answerFake === 'yes' && (
-                  <div className="text-sm">✅ Correct! A single outlier can inflate the correlation.</div>
-                )}
-                {answerFake === 'no' && (
-                  <div className="text-sm">❌ Move the star and watch how it affects the regression line.</div>
-                )}
-              </>
-            )}
-
-            {Math.abs(rValue) > 0.5 && !weakeningCondition && !distantCondition && curvedDetected && (
-              <>
-                <div><strong>What happens when the trend is curved?</strong></div>
-                <div>❗ Pearson r only measures linear correlation.</div>
-                <div>Is Pearson r good curve detective?</div>
-                <div>{renderRadio(answerDetective, setAnswerDetective)}</div>
-                {answerDetective === 'no' && (
-                  <div className="text-sm">✅ Exactly. Consider Spearman’s ρ for non-linear correlations or even Kendall’s τ.</div>
-                )}
-                {answerDetective === 'yes' && (
-                  <div className="text-sm">❌ Not quite. Pearson is blind to curves.</div>
-                )}
-                <div>👁️ Spearman’s ρ ≈ {spearmanRho.toFixed(2)}</div>
-                <button className="button btn-sm" onClick={() => setShowUshape(p => !p)}>
-                  {showUshape ? 'Too much info?' : 'What if the curve is U-shaped?'}
-                </button>
-                {showUshape && (
-                  <div className="sample-text">
-                    Neither Pearson nor Spearman are good indicators.
-                    Split the sample or calculate polynomial regression.
-                  </div>
-                )}
-              </>
-            )}
-
-            {Math.abs(rValue) > 0.9 && !hasDominantPoint && !weakeningCondition && !curvedDetected && (
-              <>
-                <div><strong>What does the correlation tell you?</strong></div>
-                <div>❗ Correlation coefficient is not the regression line. Can you see the slope direction just from the correlation coefficient?</div>
-                <div>{renderRadio(answerSlope, setAnswerSlope)}</div>
-                {answerSlope === 'yes' && (
-                  <div className="text-sm">✅ You understand correlation! It measures strength and direction.</div>
-                )}
-                {answerSlope === 'no' && (
-                  <div className="text-sm">❌ Change the direction of the stars and watch r.</div>
-                )}
-                <div>y = {intercept.toFixed(2)} + x * {slope.toFixed(2)}</div>
-                <div>👁️ If you know the x value, this model can help you predict the y value.</div>
-              </>
-            )}
-          </>
-        )}
-      </div>
+      
 
       {/* middle graph */}
 
@@ -695,6 +607,96 @@ export default function Page() {
 
       </svg>
 
+      {/* left side feedback */}
+
+      <div
+        className="feedback-container"
+        style={{ ['--graph-size' as keyof React.CSSProperties]: `${graphSize}px` }}
+      >
+        <button
+          className={`button btn-md ${showFeedback ? "button-border" : ""}`}
+          onClick={() => setShowFeedback(prev => !prev)}
+        >
+          {showFeedback ? "Hide Feedback" : "Show Feedback"}
+        </button>
+
+        {showFeedback && (
+          <>
+            {distantCondition && (
+              <>
+                <div><strong>How do outliers affect the Pearson correlation coefficient?</strong></div>
+                <div>❗ Pearson r is extremely sensitive to outliers.</div>
+                <div>Is the relationship stronger when squared residuals are smaller?</div>
+                <div>{renderRadio(answerResidual, setAnswerResidual)}</div>
+                {answerResidual === 'yes' && (
+                  <div className="text-sm">✅ Exactly! Data is closer to the regression line.</div>
+                )}
+                {answerResidual === 'no' && (
+                  <div className="text-sm">❌ Are you sure? Look again.</div>
+                )}
+                <div>👁️ Move the distant star closer to the regression line to see how it affects the correlation.</div>
+              </>
+            )}
+
+            {Math.abs(rValue) > 0.5 && hasDominantPoint && !curvedDetected && (
+              <>
+                <div><strong>How do outliers affect the Pearson correlation coefficient?</strong></div>
+                <div>❗ Pearson r is extremely sensitive to outliers.</div>
+                <div>Can one distant star fake a strong correlation?</div>
+                <div>{renderRadio(answerFake, setAnswerFake)}</div>
+                {answerFake === 'yes' && (
+                  <div className="text-sm">✅ Correct! A single outlier can inflate the correlation.</div>
+                )}
+                {answerFake === 'no' && (
+                  <div className="text-sm">❌ Move the star and watch how it affects the regression line.</div>
+                )}
+              </>
+            )}
+
+            {Math.abs(rValue) > 0.5 && !weakeningCondition && !distantCondition && curvedDetected && (
+              <>
+                <div><strong>What happens when the trend is curved?</strong></div>
+                <div>❗ Pearson r only measures linear correlation.</div>
+                <div>Is Pearson r good curve detective?</div>
+                <div>{renderRadio(answerDetective, setAnswerDetective)}</div>
+                {answerDetective === 'no' && (
+                  <div className="text-sm">✅ Exactly. Consider Spearman’s ρ for non-linear correlations or even Kendall’s τ.</div>
+                )}
+                {answerDetective === 'yes' && (
+                  <div className="text-sm">❌ Not quite. Pearson is blind to curves.</div>
+                )}
+                <div>👁️ Spearman’s ρ ≈ {spearmanRho.toFixed(2)}</div>
+                <button className="button btn-sm" onClick={() => setShowUshape(p => !p)}>
+                  {showUshape ? 'Too much info?' : 'What if the curve is U-shaped?'}
+                </button>
+                {showUshape && (
+                  <div className="sample-text">
+                    Neither Pearson nor Spearman are good indicators.
+                    Split the sample or calculate polynomial regression.
+                  </div>
+                )}
+              </>
+            )}
+
+            {Math.abs(rValue) > 0.9 && !hasDominantPoint && !weakeningCondition && !curvedDetected && (
+              <>
+                <div><strong>What does the correlation tell you?</strong></div>
+                <div>❗ Correlation coefficient is not the regression line. Can you see the slope direction just from the correlation coefficient?</div>
+                <div>{renderRadio(answerSlope, setAnswerSlope)}</div>
+                {answerSlope === 'yes' && (
+                  <div className="text-sm">✅ You understand correlation! It measures strength and direction.</div>
+                )}
+                {answerSlope === 'no' && (
+                  <div className="text-sm">❌ Change the direction of the stars and watch r.</div>
+                )}
+                <div>y = {intercept.toFixed(2)} + x * {slope.toFixed(2)}</div>
+                <div>👁️ If you know the x value, this model can help you predict the y value.</div>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
 
       {/* axis */}
 
@@ -819,7 +821,7 @@ export default function Page() {
 
         {/* Show Mean Line toggle */}
         <button className={`button btn-md ${showMean ? "button-border" : ""}`} onClick={() => setShowMean(prev => !prev)}>
-          Show Mean Line
+          Mean Line
         </button>
       </div>
 

@@ -394,290 +394,283 @@ export default function Page() {
 
   return (
 
-    <div
-      style={{
-        position: "relative",
-        height: "100vh",
-        userSelect: "none",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-      }}
-    >
+    <div>
+      <div className="centered">
 
-      <Tippy
-        content={<>Did you know that blue stars are the hottest?<br />They burn fast and die young.</>}
-        arrow
-        delay={100}
-      >
-        <h2 className="page-title">Create your constellation</h2>
-      </Tippy>
-
-
-      <div className="dropdown-selector">
-        <select
-          value={selectedConstellation}
-          className="text-sm"
-          onChange={(e) => {
-            const choice = e.target.value;
-            setSelectedConstellation(choice);
-            setShowFeedback(true);
-
-            if (choice === "random") {
-              const initialStars: StarData[] = Array.from({ length: 10 }, (_, i) => ({
-                id: i,
-                x: graphSize / 2 + (Math.random() - 0.5) * graphSize,
-                y: graphSize / 2 + (Math.random() - 0.5) * graphSize,
-              }));
-              setStars(initialStars);
-            } else {
-              setStars(CONSTELLATIONS[choice]);
-            }
-          }}
+        <Tippy
+          content={<>Did you know that blue stars are the hottest?<br />They burn fast and die young.</>}
+          arrow
+          delay={100}
         >
-          <option value="random">Random</option>
-          <option value="diagonal">Diagonal</option>
-          <option value="outlier">Outlier</option>
-          <option value="curved">Curved</option>
-          <option value="custom" disabled>Custom</option>
-        </select>
-      </div>
+          <h2 className="page-title">Create your constellation</h2>
+        </Tippy>
 
-      
 
-      {/* middle graph */}
+        <div className="dropdown-selector">
+          <select
+            value={selectedConstellation}
+            className="text-sm"
+            onChange={(e) => {
+              const choice = e.target.value;
+              setSelectedConstellation(choice);
+              setShowFeedback(true);
 
-      <svg className="notranslate responsive-graph"
-        ref={svgRef}
-        width={graphSize}
-        height={graphSize}
-        onMouseMove={handleMove}
-        onMouseUp={handleDragEnd}
-
-        onTouchMove={handleMove}
-
-        style={{ cursor: draggingStarId !== null ? "crosshair" : "default" }}
-      >
-        <defs>
-          <linearGradient id="starGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="blue" />
-            <stop offset="25%" stopColor="white" />
-            <stop offset="50%" stopColor="yellow" />
-            <stop offset="75%" stopColor="orange" />
-            <stop offset="100%" stopColor="red" />
-          </linearGradient>
-
-          <mask id="starMask" maskUnits="userSpaceOnUse">
-            <rect width={graphSize} height={graphSize} fill="white" />
-            {stars.map((s) => (
-              <g
-                key={s.id}
-                transform={`translate(${s.x}, ${s.y}) translate(${-STAR_SIZE / 2
-                  }, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24})`}
-              >
-                <path d={STAR_PATH} fill="black" />
-              </g>
-            ))}
-          </mask>
-        </defs>
-
-        <rect width={graphSize} height={graphSize} fill="url(#starGradient)" />
-        <rect width={graphSize} height={graphSize} fill="black" mask="url(#starMask)" />
-
-        <line x1={0} y1={graphSize} x2={graphSize} y2={graphSize} stroke="white" />
-        <line x1={0} y1={graphSize} x2={0} y2={0} stroke="white" />
-
-        {stars.map((s) => (
-          <g
-            key={s.id}
-            transform={`translate(${s.x}, ${s.y})`}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              setDraggingStarId(s.id);
+              if (choice === "random") {
+                const initialStars: StarData[] = Array.from({ length: 10 }, (_, i) => ({
+                  id: i,
+                  x: graphSize / 2 + (Math.random() - 0.5) * graphSize,
+                  y: graphSize / 2 + (Math.random() - 0.5) * graphSize,
+                }));
+                setStars(initialStars);
+              } else {
+                setStars(CONSTELLATIONS[choice]);
+              }
             }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              setDraggingStarId(s.id);
-            }}
-            style={{ cursor: "crosshair" }}
           >
-            <path
-              d={STAR_PATH}
-              fill="transparent"
-              pointerEvents="none"
-              transform={`translate(${-STAR_SIZE / 2}, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24})`}
-            />
-
-            <circle
-              cx={0}
-              cy={0}
-              r={20} // hit
-              fill="transparent"
-              pointerEvents="all"
-            />
-          </g>
-        ))}
-
-        {showRegression && (() => {
-          const { m, b } = computeRegressionLine(stars);
-          const lineStart = { x: 0, y: graphSize - (m * 0 + b) };
-          const lineEnd = { x: graphSize, y: graphSize - (m * graphSize + b) };
-          return (
-            <line
-              x1={lineStart.x}
-              y1={lineStart.y}
-              x2={lineEnd.x}
-              y2={lineEnd.y}
-              stroke="lime"
-              strokeWidth={2}
-            />
-          );
-        })()}
-
-        {showResiduals &&
-          computeResiduals(stars).map((res, i) => (
-            <line
-              key={i}
-              x1={res.x}
-              y1={res.yActual}
-              x2={res.x}
-              y2={res.yPred}
-              stroke="white"
-              strokeOpacity={0.5}
-              strokeWidth={1}
-            />
-          ))}
-
-        {showSquaredResiduals &&
-          computeSquaredResiduals(stars).map((sq, i) => {
-            let pixelSize = Math.sqrt(sq.size) / 2;
-            pixelSize *= 2;
-
-            const starId = stars[i].id;
-            const influence = influenceMap.get(starId) ?? 0;
-            const isDominant = influence > OUTLIER_THRESHOLD;
-
-            return (
-              <rect
-                key={starId}
-                x={sq.x}
-                y={sq.y + (sq.direction > 0 ? 0 : -pixelSize)}
-                width={pixelSize}
-                height={pixelSize}
-                fill={isDominant ? "red" : "white"}
-                fillOpacity={0.1}
-                pointerEvents="none"
-              />
-            );
-          })
-        }
-
-        {showMean && (
-          <>
-            {/* Mean y line */}
-            <line
-              x1={0}
-              y1={meanYSVG}
-              x2={graphSize}
-              y2={meanYSVG}
-              stroke="white"
-              strokeWidth={1}
-              strokeDasharray="4 2"
-              opacity={0.5}
-            />
-
-            {/* Mean y label */}
-            <Tippy content="Values are based on pixels." arrow delay={100} >
-              <text
-                x={10}
-                y={meanYSVG - 7}
-                fill="white"
-                fontSize="12"
-                textAnchor="start"
-                cursor="help"
-              >
-                Mean y ≈ {meanY.toFixed(1)}
-              </text>
-            </Tippy>
-
-
-          </>
-        )}
-
-      </svg>
-
-
-      {/* axis */}
-
-      <button className="axis-label"
-        style={
-          isMobile
-            ? {
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-290px, -300px) rotate(-90deg)",
-              transformOrigin: "right center",
-              minWidth: "8rem",
-              textAlign: "center",
-              whiteSpace: "nowrap",
-            }
-            : {
-              position: "absolute",
-              left: `calc(50% - ${graphSize / 2}px - 7rem)`,
-              top: `calc(50% - ${graphSize / 2}px + 5px)`,
-            }
-
-        }
-        onClick={() =>
-          setYAxisLabel((p) => (p === "y axis" ? "Temperature" : "y axis"))
-        }
-      >
-        {yAxisLabel}
-      </button>
-
-      <button className="axis-label"
-        style={
-          isMobile
-            ? {
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(130px, 90px)",
-            }
-            : {
-              position: "absolute",
-              left: `calc(50% + ${graphSize / 2}px - 2rem)`,
-              top: `calc(50% + ${graphSize / 2}px + 1rem)`,
-            }
-
-        }
-        onClick={() =>
-          setXAxisLabel((p) => (p === "x axis" ? "Age" : "x axis"))
-        }
-      >
-        {xAxisLabel}
-      </button>
-
-
-      {/* slider below graph */}
-
-      <div className="slider-container">
-        <div className="slider-track">
-          <div
-            className="slider-indicator"
-            style={{ left: `${((rValue + 1) / 2) * 100}%` }} // dynamic only
-          />
+            <option value="random">Random</option>
+            <option value="diagonal">Diagonal</option>
+            <option value="outlier">Outlier</option>
+            <option value="curved">Curved</option>
+            <option value="custom" disabled>Custom</option>
+          </select>
         </div>
 
-        <Tippy content="Pearson r" arrow delay={100}>
-          <div className="slider-label notranslate" translate="no">
-            r ≈ {rValue.toFixed(2)}
-          </div>
-        </Tippy>
-      </div>
 
+
+        {/* middle graph */}
+
+        <svg className="notranslate responsive-graph"
+          ref={svgRef}
+          width={graphSize}
+          height={graphSize}
+          onMouseMove={handleMove}
+          onMouseUp={handleDragEnd}
+
+          onTouchMove={handleMove}
+
+          style={{ cursor: draggingStarId !== null ? "crosshair" : "default" }}
+        >
+          <defs>
+            <linearGradient id="starGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="blue" />
+              <stop offset="25%" stopColor="white" />
+              <stop offset="50%" stopColor="yellow" />
+              <stop offset="75%" stopColor="orange" />
+              <stop offset="100%" stopColor="red" />
+            </linearGradient>
+
+            <mask id="starMask" maskUnits="userSpaceOnUse">
+              <rect width={graphSize} height={graphSize} fill="white" />
+              {stars.map((s) => (
+                <g
+                  key={s.id}
+                  transform={`translate(${s.x}, ${s.y}) translate(${-STAR_SIZE / 2
+                    }, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24})`}
+                >
+                  <path d={STAR_PATH} fill="black" />
+                </g>
+              ))}
+            </mask>
+          </defs>
+
+          <rect width={graphSize} height={graphSize} fill="url(#starGradient)" />
+          <rect width={graphSize} height={graphSize} fill="black" mask="url(#starMask)" />
+
+          <line x1={0} y1={graphSize} x2={graphSize} y2={graphSize} stroke="white" />
+          <line x1={0} y1={graphSize} x2={0} y2={0} stroke="white" />
+
+          {stars.map((s) => (
+            <g
+              key={s.id}
+              transform={`translate(${s.x}, ${s.y})`}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setDraggingStarId(s.id);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                setDraggingStarId(s.id);
+              }}
+              style={{ cursor: "crosshair" }}
+            >
+              <path
+                d={STAR_PATH}
+                fill="transparent"
+                pointerEvents="none"
+                transform={`translate(${-STAR_SIZE / 2}, ${-STAR_SIZE / 2}) scale(${STAR_SIZE / 24})`}
+              />
+
+              <circle
+                cx={0}
+                cy={0}
+                r={20} // hit
+                fill="transparent"
+                pointerEvents="all"
+              />
+            </g>
+          ))}
+
+          {showRegression && (() => {
+            const { m, b } = computeRegressionLine(stars);
+            const lineStart = { x: 0, y: graphSize - (m * 0 + b) };
+            const lineEnd = { x: graphSize, y: graphSize - (m * graphSize + b) };
+            return (
+              <line
+                x1={lineStart.x}
+                y1={lineStart.y}
+                x2={lineEnd.x}
+                y2={lineEnd.y}
+                stroke="lime"
+                strokeWidth={2}
+              />
+            );
+          })()}
+
+          {showResiduals &&
+            computeResiduals(stars).map((res, i) => (
+              <line
+                key={i}
+                x1={res.x}
+                y1={res.yActual}
+                x2={res.x}
+                y2={res.yPred}
+                stroke="white"
+                strokeOpacity={0.5}
+                strokeWidth={1}
+              />
+            ))}
+
+          {showSquaredResiduals &&
+            computeSquaredResiduals(stars).map((sq, i) => {
+              let pixelSize = Math.sqrt(sq.size) / 2;
+              pixelSize *= 2;
+
+              const starId = stars[i].id;
+              const influence = influenceMap.get(starId) ?? 0;
+              const isDominant = influence > OUTLIER_THRESHOLD;
+
+              return (
+                <rect
+                  key={starId}
+                  x={sq.x}
+                  y={sq.y + (sq.direction > 0 ? 0 : -pixelSize)}
+                  width={pixelSize}
+                  height={pixelSize}
+                  fill={isDominant ? "red" : "white"}
+                  fillOpacity={0.1}
+                  pointerEvents="none"
+                />
+              );
+            })
+          }
+
+          {showMean && (
+            <>
+              {/* Mean y line */}
+              <line
+                x1={0}
+                y1={meanYSVG}
+                x2={graphSize}
+                y2={meanYSVG}
+                stroke="white"
+                strokeWidth={1}
+                strokeDasharray="4 2"
+                opacity={0.5}
+              />
+
+              {/* Mean y label */}
+              <Tippy content="Values are based on pixels." arrow delay={100} >
+                <text
+                  x={10}
+                  y={meanYSVG - 7}
+                  fill="white"
+                  fontSize="12"
+                  textAnchor="start"
+                  cursor="help"
+                >
+                  Mean y ≈ {meanY.toFixed(1)}
+                </text>
+              </Tippy>
+
+
+            </>
+          )}
+
+        </svg>
+
+
+        {/* axis */}
+
+        <button className="axis-label"
+          style={
+            isMobile
+              ? {
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-290px, -300px) rotate(-90deg)",
+                transformOrigin: "right center",
+                minWidth: "8rem",
+                textAlign: "center",
+                whiteSpace: "nowrap",
+              }
+              : {
+                position: "absolute",
+                left: `calc(50% - ${graphSize / 2}px - 7rem)`,
+                top: `calc(50% - ${graphSize / 2}px + 5px)`,
+                textAlign: "right",
+              }
+
+          }
+          onClick={() =>
+            setYAxisLabel((p) => (p === "y axis" ? "Temperature" : "y axis"))
+          }
+        >
+          {yAxisLabel}
+        </button>
+
+        <button className="axis-label"
+          style={
+            isMobile
+              ? {
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(130px, 90px)",
+              }
+              : {
+                position: "absolute",
+                left: `calc(50% + ${graphSize / 2}px - 2rem)`,
+                top: `calc(50% + ${graphSize / 2}px + 1rem)`,
+              }
+
+          }
+          onClick={() =>
+            setXAxisLabel((p) => (p === "x axis" ? "Age" : "x axis"))
+          }
+        >
+          {xAxisLabel}
+        </button>
+
+
+        {/* slider below graph */}
+
+        <div className="slider-container">
+          <div className="slider-track">
+            <div
+              className="slider-indicator"
+              style={{ left: `${((rValue + 1) / 2) * 100}%` }} // dynamic only
+            />
+          </div>
+
+          <Tippy content="Pearson r" arrow delay={100}>
+            <div className="slider-label notranslate" translate="no">
+              r ≈ {rValue.toFixed(2)}
+            </div>
+          </Tippy>
+        </div>
+
+      </div>
 
       {/* Top-right controls */}
       <div className="top-right">
@@ -735,7 +728,7 @@ export default function Page() {
         </button>
       </div>
 
-            {/* left side feedback */}
+      {/* left side feedback */}
 
       <div
         className="feedback-container"

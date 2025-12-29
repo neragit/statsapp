@@ -698,7 +698,7 @@ export default function Page() {
               position: "absolute",
               left: "50%",
               top: "50%",
-              transform: "translate(-300px, -300px) rotate(-90deg)",
+              transform: "translate(-290px, -300px) rotate(-90deg)",
               transformOrigin: "right center",
               minWidth: "8rem",
               textAlign: "center",

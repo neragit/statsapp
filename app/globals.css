@@ -564,14 +564,10 @@ input[type="range"]::-moz-range-thumb:active {
     height: 90vw;
     max-width: 380px;
     max-height: 380px;
-    margin: 0 auto;
-    display: block;
   }
 
   .page-title {
     transform: none;
-    left: 0;
-    width: 100%;
     text-align: center;
     font-size: 30px;
   }

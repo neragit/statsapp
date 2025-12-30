@@ -574,13 +574,11 @@ input[type="range"]::-moz-range-thumb:active {
   }
 
   .dropdown-selector {
-    position: absolute;
-    top: 5.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
   }
 
   .responsive-graph {
+    position: relative;
     width: 90vw;
     height: 90vw;
     max-width: 380px;
@@ -589,8 +587,6 @@ input[type="range"]::-moz-range-thumb:active {
 
   .slider-container {
     position: relative;
-    display: flex;
-    flex-direction: column;
   }
 
 

@@ -576,7 +576,7 @@ input[type="range"]::-moz-range-thumb:active {
 
   .dropdown-selector {
   position: relative;
-  top: 0;
+  margin-top: 2rem;
   left: 0;
   transform: none;
 }

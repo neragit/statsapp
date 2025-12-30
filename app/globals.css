@@ -564,6 +564,22 @@ input[type="range"]::-moz-range-thumb:active {
     z-index: 2;
   }
 
+  .page-title {
+    position: relative;
+    left: 0;
+    width: 100%;
+    transform: none;
+    text-align: center;
+    font-size: 30px;
+  }
+
+  .dropdown-selector {
+    position: absolute;
+    top: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
   .responsive-graph {
     width: 90vw;
     height: 90vw;
@@ -577,13 +593,7 @@ input[type="range"]::-moz-range-thumb:active {
     flex-direction: column;
   }
 
-  .page-title {
-    left: 0;
-    width: 100%;
-    transform: none;
-    text-align: center;
-    font-size: 30px;
-  }
+
 
 
   .feedback-container {

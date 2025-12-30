@@ -579,6 +579,7 @@ input[type="range"]::-moz-range-thumb:active {
   top: 0;
   left: 0;
   transform: none;
+  margin-top: 2rem;
 }
 
   .responsive-graph {

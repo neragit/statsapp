@@ -589,6 +589,12 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
   }
 
+  .slider-container {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+  }
 
 
 

@@ -46,7 +46,7 @@ body,
   user-select: none;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -565,7 +565,6 @@ input[type="range"]::-moz-range-thumb:active {
   }
 
   .responsive-graph {
-    position: relative;
     width: 90vw;
     height: 90vw;
     max-width: 380px;
@@ -574,6 +573,8 @@ input[type="range"]::-moz-range-thumb:active {
 
   .slider-container {
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   .page-title {

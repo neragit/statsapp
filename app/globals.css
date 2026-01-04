@@ -633,6 +633,7 @@ input[type="range"]::-moz-range-thumb:active {
   }
 
   .graph-controls {
+    position: relative; 
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
@@ -645,7 +646,7 @@ input[type="range"]::-moz-range-thumb:active {
 
   }
 
-  .top-right::-webkit-scrollbar {
+  .graph-controls::-webkit-scrollbar {
     display: none;
   }
 

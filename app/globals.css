@@ -645,8 +645,8 @@ input[type="range"]::-moz-range-thumb:active {
 
   .feedback-container {
     position: relative;
-    display: flex;
     width: 90%;
+    margin-top: 1rem;
   }
 
 }

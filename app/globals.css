@@ -638,7 +638,7 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
     left: auto;
     top: auto;
-    margin: 1rem auto;
+
     width: 90%;
     min-height: 40px;
     align-items: center;

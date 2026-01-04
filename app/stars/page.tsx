@@ -149,7 +149,7 @@ export default function Page() {
     curved: Array.from({ length: 10 }, (_, i) => {
       const numStars = 10;
       const x = (i + 0.75) * (graphSize / (numStars + 0.25));
-      const maxDrop = 450;
+      const maxDrop = graphSize * 0.9;
       const rate = 0.009;
       const y = graphSize - (maxDrop * (1 - Math.exp(-rate * x)));
       return { id: i, x, y };

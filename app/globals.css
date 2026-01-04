@@ -601,6 +601,7 @@ input[type="range"]::-moz-range-thumb:active {
     max-width: 380px;
     max-height: 380px;
     padding: 0.5rem;
+    outline: 2px solid green;
   }
 
   .slider-container {

@@ -593,6 +593,7 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
     width: 90vw;
     max-width: 380px;
+    padding-top: 0.2rem;
   }
 
   .slider-container {

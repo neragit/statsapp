@@ -395,7 +395,7 @@ export default function Page() {
   return (
 
     <div>
-      <div className="centered md:h-screen h-auto ">
+      <div className="centered">
 
         <Tippy
           content={<>Did you know that blue stars are the hottest?<br />They burn fast and die young.</>}

@@ -556,6 +556,12 @@ input[type="range"]::-moz-range-thumb:active {
     /* allow scroll if content overflows */
   }
 
+  .centered {
+  position: relative;
+  height: auto;
+}
+
+
   .feedback-container {
     position: relative;
     left: auto;

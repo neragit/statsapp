@@ -385,6 +385,7 @@ body,
 
 .page-title {
   position: relative;
+  margin-top: 1rem;
   font-size: 30px;
   cursor: help;
 
@@ -396,6 +397,7 @@ body,
 
 .dropdown-selector {
   position: relative;
+  margin-top: 1rem;
 }
 
 .dropdown-selector select {

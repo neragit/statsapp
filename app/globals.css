@@ -622,7 +622,6 @@ input[type="range"]::-moz-range-thumb:active {
     display: flex;
     flex-direction: column;
     width: 100%;
-    margin-left: 0;
     outline: 2px solid red;
   }
 
@@ -650,6 +649,7 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
     margin: 0 auto;
     width: 90%;
+    min-height: 40px;
     outline: 2px solid blue;
   }
 

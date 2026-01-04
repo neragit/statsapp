@@ -593,8 +593,6 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
     width: 90vw;
     max-width: 380px;
-    max-height: 380px;
-    padding: 0.5rem;
     outline: 2px solid green;
   }
 

@@ -385,6 +385,7 @@ body,
 
 .page-title {
   position: relative;
+  display: flex;
   font-size: 30px;
   cursor: help;
 
@@ -396,6 +397,7 @@ body,
 
 .dropdown-selector {
   position: relative;
+  display: flex;
 }
 
 .dropdown-selector select {

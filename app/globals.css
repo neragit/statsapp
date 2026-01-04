@@ -633,9 +633,6 @@ input[type="range"]::-moz-range-thumb:active {
 
   }
 
-  .graph-controls::-webkit-scrollbar {
-    display: none;
-  }
 
   .feedback-container {
     position: relative;

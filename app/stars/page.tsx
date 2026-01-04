@@ -245,9 +245,12 @@ export default function Page() {
     });
   };
 
+
   const SSE = computeSquaredResiduals(stars).reduce((sum, sq) => sum + sq.size, 0);
+  const SSE_SCALE = (graphSize / 500) ** 2;
+  const adjustedSSE = SSE / SSE_SCALE; // needed to adjust for phones
   const maxSSE = 180000; // slightly above max observed
-  const barWidth = Math.min(SSE / maxSSE, 1) * 150; // 150px max width
+  const barWidth = Math.min(adjustedSSE / maxSSE, 1) * 150; // 150px max width
 
   const computeCovarianceInfluence = (stars: StarData[]) => {
     const n = stars.length;
@@ -361,14 +364,14 @@ export default function Page() {
     Math.abs(rValue) > 0.4 &&
     !hasDominantPoint &&
     weakeningOutliers.length > 0 &&
-    SSE > 50000;
+    adjustedSSE > 50000;
 
   const distantCondition =
     Math.abs(rValue) < 0.9 &&
     Math.abs(rValue) > 0.4 &&
     !hasDominantPoint &&
     weakeningOutliers.length > 0
-    && SSE > 50000 && SSE < 160000;
+    && adjustedSSE > 50000 && adjustedSSE < 160000;
 
 
   // feedback 

@@ -385,7 +385,6 @@ body,
 
 .page-title {
   position: relative;
-  display: flex;
   font-size: 30px;
   cursor: help;
 
@@ -397,7 +396,6 @@ body,
 
 .dropdown-selector {
   position: relative;
-  display: flex;
 }
 
 .dropdown-selector select {
@@ -410,17 +408,14 @@ body,
 
 .responsive-graph {
 
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   touch-action: none;
   /* disable default scrolling on this div */
   overscroll-behavior: contain;
   /* prevent page pull-to-refresh */
 }
-
-
 
 
 

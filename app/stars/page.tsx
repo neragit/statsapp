@@ -636,7 +636,7 @@ export default function Page() {
                 position: "absolute",
                 left: "50%",
                 top: "50%",
-                transform: "translate(130px, 220px)",
+                transform: "translate(130px, 230px)",
               }
               : {
                 position: "absolute",

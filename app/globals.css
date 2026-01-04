@@ -593,7 +593,6 @@ input[type="range"]::-moz-range-thumb:active {
     position: relative;
     width: 90vw;
     max-width: 380px;
-    outline: 2px solid green;
   }
 
   .slider-container {
@@ -609,7 +608,6 @@ input[type="range"]::-moz-range-thumb:active {
     display: flex;
     flex-direction: column;
     width: 100%;
-    outline: 2px solid red;
   }
 
   .graph-controls {
@@ -642,7 +640,6 @@ input[type="range"]::-moz-range-thumb:active {
     margin: 1rem auto;
     width: 90%;
     min-height: 40px;
-    outline: 2px solid blue;
     align-items: center;
   }
 

@@ -609,6 +609,7 @@ input[type="range"]::-moz-range-thumb:active {
     display: flex;
     flex-direction: column;
     width: 100%;
+    overscroll-behavior: contain;
   }
 
   .graph-controls {

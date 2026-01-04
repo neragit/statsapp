@@ -647,11 +647,14 @@ input[type="range"]::-moz-range-thumb:active {
 
   .feedback-container {
     position: relative;
+    left: auto;
+    top: auto;
     margin: 1rem auto;
     width: 90%;
     min-height: 40px;
     outline: 2px solid blue;
     z-index: 99;
   }
+  
 
 }

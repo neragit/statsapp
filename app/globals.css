@@ -615,15 +615,12 @@ input[type="range"]::-moz-range-thumb:active {
     transform: none;
   }
 
-  .feedback-container {
-    position: relative;
-    left: auto;
-    top: auto;
-    width: 90%;
-    margin: 1rem auto 0; /* 1rem top margin, auto horizontal centering */
-  }
+
 
   .mobile-only {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     margin-top: 1rem;
   }
@@ -644,6 +641,12 @@ input[type="range"]::-moz-range-thumb:active {
 
   .graph-controls::-webkit-scrollbar {
     display: none;
+  }
+
+  .feedback-container {
+    position: relative;
+    display: flex;
+    width: 90%;
   }
 
 }

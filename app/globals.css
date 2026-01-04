@@ -630,6 +630,7 @@ input[type="range"]::-moz-range-thumb:active {
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
+    margin-left: 1rem;
 
     overflow-x: auto;
     white-space: nowrap;
@@ -646,7 +647,6 @@ input[type="range"]::-moz-range-thumb:active {
   .feedback-container {
     position: relative;
     width: 90%;
-    margin-top: 1rem;
   }
 
 }

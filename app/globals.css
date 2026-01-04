@@ -630,7 +630,7 @@ input[type="range"]::-moz-range-thumb:active {
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
-    margin-left: 2rem;
+    margin-left: 2.5rem;
 
     overflow-x: auto;
     white-space: nowrap;

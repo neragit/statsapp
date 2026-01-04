@@ -674,61 +674,7 @@ export default function Page() {
 
       <div className="mobile-only" >
 
-        {/* controls */}
-        <div className="graph-controls">
 
-          {/* Show Regression Line toggle */}
-          <button className={`button btn-md ${showRegression ? "button-border" : ""}`} onClick={() => setShowRegression(prev => !prev)}>
-            Regression Line
-          </button>
-
-          {/* Show Best-fit Equation toggle */}
-          <button className={`button btn-md ${showEquation ? "button-border" : ""}`} onClick={() => setShowEquation(prev => !prev)}>
-            Best-fit Equation
-          </button>
-
-          {/* Equation display */}
-          {showEquation && (
-            <Tippy content="Values are based on pixels." arrow delay={100}>
-              <div className="top-right-equation">
-                y = {intercept.toFixed(2)} + x * {slope.toFixed(2)}
-              </div>
-            </Tippy>
-          )}
-
-          {/* Show Squared Residuals toggle */}
-          <button className={`button btn-md ${showSquaredResiduals ? "button-border" : ""}`} onClick={() => setShowSquaredResiduals(prev => !prev)}>
-            Squared Residuals
-          </button>
-
-          {/* SSE bar */}
-          {showSquaredResiduals && (
-            <div className="sse-container">
-              <div className="sse-row">
-                <span className="sse-label">0</span>
-                <div className="sse-track">
-                  <div className="sse-fill" style={{ width: `${barWidth}px` }} />
-                </div>
-              </div>
-              <span className="sse-label">Sum</span>
-            </div>
-          )}
-
-          {/* Non-linear trend toggle */}
-          <button className={`button btn-md ${showCurvedInfo ? "button-border" : ""}`} onClick={() => setShowCurvedInfo(prev => !prev)}>
-            Non-linear trend
-          </button>
-          {showCurvedInfo && (
-            <div style={{ paddingRight: "1rem" }}>
-              Spearman’s ρ ≈ {spearmanRho.toFixed(2)}
-            </div>
-          )}
-
-          {/* Show Mean Line toggle */}
-          <button className={`button btn-md ${showMean ? "button-border" : ""}`} onClick={() => setShowMean(prev => !prev)}>
-            Mean Line
-          </button>
-        </div>
 
         {/* left side feedback */}
 

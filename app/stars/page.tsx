@@ -455,7 +455,7 @@ export default function Page() {
         >
           <defs>
             <linearGradient id="starGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="blue" />
+              <stop offset="1%" stopColor="blue" />
               <stop offset="25%" stopColor="white" />
               <stop offset="50%" stopColor="yellow" />
               <stop offset="75%" stopColor="orange" />

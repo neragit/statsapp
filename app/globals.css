@@ -423,6 +423,7 @@ body,
 
 .slider-container {
   position: relative;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;

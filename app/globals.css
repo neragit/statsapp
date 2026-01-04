@@ -598,9 +598,9 @@ input[type="range"]::-moz-range-thumb:active {
   .responsive-graph {
     position: relative;
     width: 90vw;
-    height: 90vw;
     max-width: 380px;
     max-height: 380px;
+
   }
 
   .slider-container {

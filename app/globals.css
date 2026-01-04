@@ -627,6 +627,8 @@ input[type="range"]::-moz-range-thumb:active {
 
   .graph-controls {
     position: relative;
+    left: auto;
+    top: auto;
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
@@ -635,9 +637,8 @@ input[type="range"]::-moz-range-thumb:active {
     overflow-x: auto;
     white-space: nowrap;
 
-    padding: 0.5rem 1rem;
     width: 100%;
-    
+
 
   }
 
@@ -655,6 +656,6 @@ input[type="range"]::-moz-range-thumb:active {
     outline: 2px solid blue;
     z-index: 99;
   }
-  
+
 
 }

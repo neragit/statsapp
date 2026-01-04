@@ -27,16 +27,19 @@ export default function Page() {
   }, []);
 
 
-  useEffect(() => {
-    const updateSize = () => {
-      const size = Math.min(window.innerWidth * 0.9, 500);
-      setGraphSize(size);
-    };
+useEffect(() => {
+  const updateSize = () => {
+    const size = Math.min(window.innerWidth * 0.9, 500);
 
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
+    setGraphSize(prev => (prev === size ? prev : size));
+  };
+
+  updateSize();
+  window.addEventListener("resize", updateSize);
+
+  return () => window.removeEventListener("resize", updateSize);
+}, []);
+
 
 
   //initializing stars and handling drag

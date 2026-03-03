@@ -693,48 +693,7 @@ export default function GardenSimulator() {
             {/* Main layout — single col on mobile, 3-col on desktop */}
             <div className="grid grid-cols-1 md:grid-cols-[280px_1fr_260px] md:grid-rows-[auto_1fr] gap-3 px-4 py-3 max-w-[1280px] mx-auto"
                 style={{ maxHeight: "calc(100vh - 150px)" }}>
-                {/* ── Left: seed selection ─────────────────────────────────────── */}
-                <aside
-                    className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2 "
-                    style={{
-                        border: "1px solid rgba(168,255,120,0.15)",
-                    }}
-                >
-                    <button
-                        onClick={reset}
-                        className="w-full py-2 rounded-lg text-xs font-bold tracking-widest uppercase cursor-pointer transition-all"
-                        style={{
-                            background: "rgba(255,80,80,0.12)",
-                            border: "1.5px solid rgba(255,80,80,0.4)",
-                            color: "#ff7070",
-                        }}
-                    >
-                        ↺ NEW EXPERIMENT
-                    </button>
-
-                    <button
-                        onClick={() => setControlsOpen(!controlsOpen)}
-                        className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer flex justify-center items-center py-0"
-                    >
-                        SELECT SEEDS
-                    </button>
-
-                    {controlsOpen && (
-                        <div className="overflow-y-auto sidebar-scroll">
-                            {PLANTS.map((plant) => (
-                                <SeedSelector
-                                    key={plant.id}
-                                    plant={plant}
-                                    count={seedCounts[plant.id]}
-                                    onChange={(v) => setSeedCounts((prev) => ({ ...prev, [plant.id]: v }))}
-                                    sun={sun}
-                                    water={water}
-                                    fertilizer={fertilizer}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </aside>
+                
 
                 {/* ── Top centre: environmental controls ──────────────────────────── */}
                 <section
@@ -788,13 +747,67 @@ export default function GardenSimulator() {
                     </div>
                     <div className="flex items-center justify-center ">
                         {conditionsLocked && (
-                            <div className="text-[9px] tracking-widest uppercase flex items-center gap-1"
+                            <div className="text-[9px] tracking-widest uppercase flex items-center gap-1 mt-3 sm:mt-0"
                                 style={{ color: "#ffcc44" }}>
                                 experiment running
                             </div>
                         )}
                     </div>
                 </section>
+
+                {/* ── Left: seed selection ─────────────────────────────────────── */}
+                <aside
+                    className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2 "
+                    style={{
+                        border: "1px solid rgba(168,255,120,0.15)",
+                    }}
+                >
+                    <button
+                        onClick={reset}
+                        className="w-full py-2 rounded-lg text-xs font-bold tracking-widest uppercase cursor-pointer transition-all"
+                        style={{
+                            background: "rgba(255,80,80,0.12)",
+                            border: "1.5px solid rgba(255,80,80,0.4)",
+                            color: "#ff7070",
+                        }}
+                    >
+                        ↺ NEW EXPERIMENT
+                    </button>
+
+                    <button
+    onClick={() => setControlsOpen(!controlsOpen)}
+    className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer grid w-full py-0"
+    style={{ gridTemplateColumns: "1fr auto 1fr" }}
+>
+    <div />
+    <span>SELECT SEEDS</span>
+    <div className="flex justify-end items-center">
+        <span style={{ 
+            fontSize: "8px", 
+            color: "rgba(168,255,120,0.5)",
+            transition: "transform 0.2s ease",
+            display: "inline-block",
+            transform: controlsOpen ? "rotate(180deg)" : "rotate(0deg)",
+        }}>▼</span>
+    </div>
+</button>
+
+                    {controlsOpen && (
+                        <div className="overflow-y-auto sidebar-scroll max-h-[250px] md:max-h-none">
+                            {PLANTS.map((plant) => (
+                                <SeedSelector
+                                    key={plant.id}
+                                    plant={plant}
+                                    count={seedCounts[plant.id]}
+                                    onChange={(v) => setSeedCounts((prev) => ({ ...prev, [plant.id]: v }))}
+                                    sun={sun}
+                                    water={water}
+                                    fertilizer={fertilizer}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </aside>
 
                 {/* ── Centre: garden plot ──────────────────────────────────────────── */}
                 <div className="relative md:col-start-2 md:row-start-2">

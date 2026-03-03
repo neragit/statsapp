@@ -47,16 +47,16 @@ const PLANTS: PlantConfig[] = [
     // Domino Cactus — extreme sun/dry, very unforgiving of overwatering
     { id: "domino", label: "Domino Cactus", file: "domino.png", idealSun: 2, idealWater: 0, idealFertilizer: 0, tolerance: 0.80 },
 
-        // Orchid — small deviations = big failures
+    // Orchid — small deviations = big failures
     { id: "orchid", label: "Orchid", file: "orchid.png", idealSun: 1, idealWater: 1, idealFertilizer: 1, tolerance: 0.25 },
 
-            // Gardenia — needs everything high, very unforgiving
+    // Gardenia — needs everything high, very unforgiving
     { id: "gardenia", label: "Gardenia", file: "gardenia.png", idealSun: 2, idealWater: 2, idealFertilizer: 2, tolerance: 0.3 },
 
-                // Mint — survives almost anything, aggressive grower
+    // Mint — survives almost anything, aggressive grower
     { id: "mint", label: "Mint", file: "mint.png", idealSun: 1, idealWater: 2, idealFertilizer: 1, tolerance: 0.85 },
 
-    
+
 ];
 
 
@@ -395,7 +395,7 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
                 whiteSpace: "nowrap",
                 boxShadow: "0 0 20px rgba(168,255,120,0.15)",
                 minWidth: "170px",
-                
+
             }}
         >
             {/* Header */}
@@ -671,7 +671,7 @@ export default function GardenSimulator() {
     const isDragging = dragRef.current !== null;
 
     return (
-        <div className="min-h-screen  overflow-x-hidden" style={{ background: "#050d00", color: "#a8ff78" }}>
+        <div className="min-h-screen  overflow-x-hidden" style={{ color: "#a8ff78" }}>
 
             {/* Title */}
             <header
@@ -691,8 +691,8 @@ export default function GardenSimulator() {
             </header>
 
             {/* Main layout — single col on mobile, 3-col on desktop */}
-<div className="grid grid-cols-1 md:grid-cols-[280px_1fr_260px] md:grid-rows-[auto_1fr] gap-3 px-4 py-3 max-w-[1280px] mx-auto" 
-    style={{ maxHeight: "calc(100vh - 150px)" }}>
+            <div className="grid grid-cols-1 md:grid-cols-[280px_1fr_260px] md:grid-rows-[auto_1fr] gap-3 px-4 py-3 max-w-[1280px] mx-auto"
+                style={{ maxHeight: "calc(100vh - 150px)" }}>
                 {/* ── Left: seed selection ─────────────────────────────────────── */}
                 <aside
                     className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2 "
@@ -745,7 +745,7 @@ export default function GardenSimulator() {
                         border: "1px solid rgba(168,255,120,0.15)",
                     }}
                 >
-                    
+
                     {/* Stack controls vertically on mobile, row on md+ */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 md:gap-4 items-center">
 
@@ -754,37 +754,37 @@ export default function GardenSimulator() {
                         <ConditionControl icon="fertilizer.png" label="Fertilizer" value={fertilizer} onChange={conditionsLocked ? () => { } : setFertilizer} locked={conditionsLocked} />
 
                         <div className="flex flex-col gap-1 ml-2">
-{/* Toggle — locked once experiment starts */}
-<button
-    onClick={handleToggleRandomness}
-    disabled={conditionsLocked}
-    className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all"
-    style={{
-        background: randomnessEnabled ? "rgba(255,180,0,0.15)" : "rgba(255,180,0,0.05)",
-        border: `1.5px solid ${randomnessEnabled ? "rgba(255,180,0,0.6)" : "rgba(255,180,0,0.2)"}`,
-        color: randomnessEnabled ? "#ffcc44" : "rgba(255,180,0,0.4)",
-        cursor: conditionsLocked ? "not-allowed" : "pointer",
-        opacity: conditionsLocked ? 0.5 : 1,
-    }}
->
-    {randomnessEnabled ? "RANDOMNESS ON" : "RANDOMNESS OFF"}
-</button>
+                            {/* Toggle — locked once experiment starts */}
+                            <button
+                                onClick={handleToggleRandomness}
+                                disabled={conditionsLocked}
+                                className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all w-35"
+                                style={{
+                                    background: conditionsLocked ? "rgba(255,180,0,0.05)" : " rgba(255,180,0,0.15)",
+                                    border: `1.5px solid ${conditionsLocked ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6) "}`,
+                                    color: conditionsLocked ? " rgba(255,180,0,0.4)" : "#ffcc44",
+                                    cursor: conditionsLocked ? "not-allowed" : "pointer",
+                                    opacity: conditionsLocked ? 0.5 : 1,
+                                }}
+                            >
+                                {randomnessEnabled ? "RANDOMNESS ON" : "RANDOMNESS OFF"}
+                            </button>
 
-{/* Trigger — only blocked when randomness is off */}
-<button
-    onClick={() => { if (randomnessEnabled) triggerRandomEvent(); }}
-    disabled={!randomnessEnabled}
-    className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all"
-    style={{
-        background: randomnessEnabled ? "rgba(255,180,0,0.15)" : "rgba(255,180,0,0.05)",
-        border: `1.5px solid ${randomnessEnabled ? "rgba(255,180,0,0.6)" : "rgba(255,180,0,0.2)"}`,
-        color: randomnessEnabled ? "#ffcc44" : "rgba(255,180,0,0.4)",
-        cursor: !randomnessEnabled ? "not-allowed" : "pointer",
-        opacity: !randomnessEnabled ? 0.5 : 1,
-    }}
->
-    trigger event
-</button>
+                            {/* Trigger — only blocked when randomness is off */}
+                            <button
+                                onClick={() => { if (randomnessEnabled) triggerRandomEvent(); }}
+                                disabled={!randomnessEnabled}
+                                className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all"
+                                style={{
+                                    background: randomnessEnabled ? "rgba(255,180,0,0.15)" : "rgba(255,180,0,0.05)",
+                                    border: `1.5px solid ${randomnessEnabled ? "rgba(255,180,0,0.6)" : "rgba(255,180,0,0.2)"}`,
+                                    color: randomnessEnabled ? "#ffcc44" : "rgba(255,180,0,0.4)",
+                                    cursor: !randomnessEnabled ? "not-allowed" : "pointer",
+                                    opacity: !randomnessEnabled ? 0.5 : 1,
+                                }}
+                            >
+                                trigger event
+                            </button>
                         </div>
                     </div>
                     <div className="flex items-center justify-center ">
@@ -969,54 +969,54 @@ export default function GardenSimulator() {
                     })()}
 
                     <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-center" style={{ color: "rgba(168,255,120,0.6)" }}>
-                            EXPECTED
-                        </div>
-                        <div className="overflow-y-auto sidebar-scroll">
+                        EXPECTED
+                    </div>
+                    <div className="overflow-y-auto sidebar-scroll">
 
-                    {stats.map(({ plant, total, thriving, prob }) => {
-                        const hasSims = simulated && total > 0;
-                        return (
-                            <div
-                                key={plant.id}
-                                onClick={() => setSelectedPlantId(plant.id)}
-                                className="p-2 rounded-lg cursor-pointer transition-all "
-                                style={{
-                                    background: selectedPlantId === plant.id
-                                        ? "rgba(168,255,120,0.08)"
-                                        : "rgba(168,255,120,0.03)",
-                                    border: selectedPlantId === plant.id
-                                        ? "1px solid rgba(168,255,120,0.4)"
-                                        : "1px solid rgba(168,255,120,0.1)",
-                                    opacity: total === 0 ? 0.4 : 1,
-                                }}
-                            >
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-bold tracking-wide" style={{ color: "#a8ff78" }}>{plant.label}</span>
-                                    <span
-                                        className="text-[11px] font-black"
-                                        style={{ color: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070" }}
-                                    >
-                                        {prob}%
-                                    </span>
-                                </div>
-                                <div className="h-1 rounded-sm overflow-hidden" style={{ background: "rgba(168,255,120,0.1)" }}>
-                                    <div
-                                        className="h-full rounded-sm transition-all duration-500"
-                                        style={{
-                                            width: `${prob}%`,
-                                            background: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070",
-                                        }}
-                                    />
-                                </div>
-                                {hasSims && (
-                                    <div className="text-[9px] mt-0.5" style={{ color: "rgba(168,255,120,0.5)" }}>
-                                        {thriving}/{total} thriving
+                        {stats.map(({ plant, total, thriving, prob }) => {
+                            const hasSims = simulated && total > 0;
+                            return (
+                                <div
+                                    key={plant.id}
+                                    onClick={() => setSelectedPlantId(plant.id)}
+                                    className="p-2 rounded-lg cursor-pointer transition-all "
+                                    style={{
+                                        background: selectedPlantId === plant.id
+                                            ? "rgba(168,255,120,0.08)"
+                                            : "rgba(168,255,120,0.03)",
+                                        border: selectedPlantId === plant.id
+                                            ? "1px solid rgba(168,255,120,0.4)"
+                                            : "1px solid rgba(168,255,120,0.1)",
+                                        opacity: total === 0 ? 0.4 : 1,
+                                    }}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] font-bold tracking-wide" style={{ color: "#a8ff78" }}>{plant.label}</span>
+                                        <span
+                                            className="text-[11px] font-black"
+                                            style={{ color: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070" }}
+                                        >
+                                            {prob}%
+                                        </span>
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
-</div>
+                                    <div className="h-1 rounded-sm overflow-hidden" style={{ background: "rgba(168,255,120,0.1)" }}>
+                                        <div
+                                            className="h-full rounded-sm transition-all duration-500"
+                                            style={{
+                                                width: `${prob}%`,
+                                                background: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070",
+                                            }}
+                                        />
+                                    </div>
+                                    {hasSims && (
+                                        <div className="text-[9px] mt-0.5" style={{ color: "rgba(168,255,120,0.5)" }}>
+                                            {thriving}/{total} thriving
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
 
                 </aside>
             </div>

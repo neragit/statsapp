@@ -774,26 +774,14 @@ export default function GardenSimulator() {
                         ↺ NEW EXPERIMENT
                     </button>
 
-                    <button
-    onClick={() => setControlsOpen(!controlsOpen)}
-    className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer grid w-full py-0"
-    style={{ gridTemplateColumns: "1fr auto 1fr" }}
->
-    <div />
-    <span>SELECT SEEDS</span>
-    <div className="flex justify-end items-center">
-        <span style={{ 
-            fontSize: "8px", 
-            color: "rgba(168,255,120,0.5)",
-            transition: "transform 0.2s ease",
-            display: "inline-block",
-            transform: controlsOpen ? "rotate(180deg)" : "rotate(0deg)",
-        }}>▼</span>
-    </div>
-</button>
+                     <div
+                        className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer flex justify-center items-center py-0"
+                    >
+                        SELECT SEEDS
+                    </div>
 
                     {controlsOpen && (
-                        <div className="overflow-y-auto sidebar-scroll max-h-[250px] md:max-h-none">
+                        <div className="overflow-y-auto sidebar-scroll max-h-[200px] md:max-h-none">
                             {PLANTS.map((plant) => (
                                 <SeedSelector
                                     key={plant.id}

@@ -697,7 +697,6 @@ export default function GardenSimulator() {
                 <aside
                     className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2 "
                     style={{
-                        background: "rgba(168,255,120,0.03)",
                         border: "1px solid rgba(168,255,120,0.15)",
                     }}
                 >
@@ -753,12 +752,12 @@ export default function GardenSimulator() {
                         <ConditionControl icon="water.png" label="Water" value={water} onChange={conditionsLocked ? () => { } : setWater} locked={conditionsLocked} />
                         <ConditionControl icon="fertilizer.png" label="Fertilizer" value={fertilizer} onChange={conditionsLocked ? () => { } : setFertilizer} locked={conditionsLocked} />
 
-                        <div className="flex flex-col gap-1 ml-2">
+                        <div className="flex flex-col gap-1 mx-auto lg:ml-2  w-35">
                             {/* Toggle — locked once experiment starts */}
                             <button
                                 onClick={handleToggleRandomness}
                                 disabled={conditionsLocked}
-                                className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all w-35"
+                                className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all "
                                 style={{
                                     background: conditionsLocked ? "rgba(255,180,0,0.05)" : " rgba(255,180,0,0.15)",
                                     border: `1.5px solid ${conditionsLocked ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6) "}`,
@@ -774,7 +773,7 @@ export default function GardenSimulator() {
                             <button
                                 onClick={() => { if (randomnessEnabled) triggerRandomEvent(); }}
                                 disabled={!randomnessEnabled}
-                                className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all"
+                                className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all  "
                                 style={{
                                     background: randomnessEnabled ? "rgba(255,180,0,0.15)" : "rgba(255,180,0,0.05)",
                                     border: `1.5px solid ${randomnessEnabled ? "rgba(255,180,0,0.6)" : "rgba(255,180,0,0.2)"}`,
@@ -979,7 +978,7 @@ export default function GardenSimulator() {
                                 <div
                                     key={plant.id}
                                     onClick={() => setSelectedPlantId(plant.id)}
-                                    className="p-2 rounded-lg cursor-pointer transition-all "
+                                    className="p-2 my-1 rounded-lg cursor-pointer transition-all "
                                     style={{
                                         background: selectedPlantId === plant.id
                                             ? "rgba(168,255,120,0.08)"

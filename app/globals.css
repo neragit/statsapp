@@ -526,7 +526,20 @@ input[type="range"]::-moz-range-thumb:active {
   background: #666;
 }
 
-
+/* Scrollbar — left sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+    width: 2px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background: rgba(168,255,120,0.2);
+    border-radius: 999px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(168,255,120,0.4);
+}
 
 @media (max-width: 768px) {
   .top-mobile {

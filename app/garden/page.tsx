@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+interface ExperimentRecord {
+    id: number;
+    timestamp: string;
+    sun: ConditionLevel;
+    water: ConditionLevel;
+    fertilizer: ConditionLevel;
+    events: RandomEvent[];
+    results: Record<string, { thriving: number; total: number }>;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ConditionLevel = 0 | 1 | 2;
 
@@ -13,6 +23,12 @@ interface PlantConfig {
     idealWater: ConditionLevel;
     idealFertilizer: ConditionLevel;
     tolerance: number;
+    eventSensitivity: {
+        storm: number;
+        sunflare: number;
+        pests: number;
+        drought: number;
+    };
 }
 
 interface PlantOutcome {
@@ -25,57 +41,107 @@ interface PlantOutcome {
     zIndex: number;
     isDead?: boolean;
     flip?: boolean;
+    // base roll stored so we can re-evaluate when events hit
+    baseRoll: number;
 }
 
-type RandomEvent = "storm" | "sunflare" | "pests" | null;
+type RandomEvent = "storm" | "sunflare" | "pests" | "drought" | null;
 
 const PLANTS: PlantConfig[] = [
-    // Succulent — loves neglect, hates overwatering, very tolerant
-    { id: "portulacaria", label: "Portulacaria", file: "portulacaria.png", idealSun: 2, idealWater: 0, idealFertilizer: 0, tolerance: 0.85 },
-
-    // Pothos — adaptable, survives low light, medium everything, very forgiving
-    { id: "pothos", label: "Pothos", file: "pothos.png", idealSun: 1, idealWater: 1, idealFertilizer: 0, tolerance: 0.80 },
-
-    // Pansy — cool weather annual, needs consistent water, moderate sun, fussy
-    { id: "pansy", label: "Pansy", file: "pansy.png", idealSun: 1, idealWater: 2, idealFertilizer: 1, tolerance: 0.45 },
-    // Zinnia — full sun lover, drought tolerant once established, light feeder
-    { id: "zinnia", label: "Zinnia", file: "zinnia.png", idealSun: 2, idealWater: 1, idealFertilizer: 0, tolerance: 0.65 },
-
-    // Sunflower — full sun, moderate water, heavy feeder, fairly robust
-    { id: "sunflower", label: "Sunflower", file: "sunflower.png", idealSun: 2, idealWater: 1, idealFertilizer: 2, tolerance: 0.60 },
-
-    // Domino Cactus — extreme sun/dry, very unforgiving of overwatering
-    { id: "domino", label: "Domino Cactus", file: "domino.png", idealSun: 2, idealWater: 0, idealFertilizer: 0, tolerance: 0.80 },
-
-    // Orchid — small deviations = big failures
-    { id: "orchid", label: "Orchid", file: "orchid.png", idealSun: 1, idealWater: 1, idealFertilizer: 1, tolerance: 0.25 },
-
-    // Gardenia — needs everything high, very unforgiving
-    { id: "gardenia", label: "Gardenia", file: "gardenia.png", idealSun: 2, idealWater: 2, idealFertilizer: 2, tolerance: 0.3 },
-
-    // Mint — survives almost anything, aggressive grower
-    { id: "mint", label: "Mint", file: "mint.png", idealSun: 1, idealWater: 2, idealFertilizer: 1, tolerance: 0.85 },
-
-
+    {
+        id: "portulacaria", label: "Portulacaria", file: "portulacaria.png",
+        idealSun: 2, idealWater: 0, idealFertilizer: 0, tolerance: 0.85,
+        eventSensitivity: { storm: -0.10, sunflare: +0.15, pests: -0.10, drought: +0.15 }
+    },
+    {
+        id: "pothos", label: "Pothos", file: "pothos.png",
+        idealSun: 1, idealWater: 1, idealFertilizer: 0, tolerance: 0.80,
+        eventSensitivity: { storm: -0.05, sunflare: -0.10, pests: -0.20, drought: -0.10 }
+    },
+    {
+        id: "pansy", label: "Pansy", file: "pansy.png",
+        idealSun: 1, idealWater: 2, idealFertilizer: 1, tolerance: 0.45,
+        eventSensitivity: { storm: -0.25, sunflare: -0.20, pests: -0.25, drought: -0.30 }
+    },
+    {
+        id: "zinnia", label: "Zinnia", file: "zinnia.png",
+        idealSun: 2, idealWater: 1, idealFertilizer: 0, tolerance: 0.65,
+        eventSensitivity: { storm: -0.10, sunflare: +0.10, pests: -0.15, drought: +0.05 }
+    },
+    {
+        id: "sunflower", label: "Sunflower", file: "sunflower.png",
+        idealSun: 2, idealWater: 1, idealFertilizer: 2, tolerance: 0.60,
+        eventSensitivity: { storm: -0.15, sunflare: +0.20, pests: -0.15, drought: -0.10 }
+    },
+    {
+        id: "domino", label: "Domino Cactus", file: "domino.png",
+        idealSun: 2, idealWater: 0, idealFertilizer: 0, tolerance: 0.80,
+        eventSensitivity: { storm: -0.05, sunflare: +0.15, pests: -0.05, drought: +0.20 }
+    },
+    {
+        id: "orchid", label: "Orchid", file: "orchid.png",
+        idealSun: 1, idealWater: 1, idealFertilizer: 1, tolerance: 0.25,
+        eventSensitivity: { storm: -0.30, sunflare: -0.25, pests: -0.30, drought: -0.25 }
+    },
+    {
+        id: "gardenia", label: "Gardenia", file: "gardenia.png",
+        idealSun: 2, idealWater: 2, idealFertilizer: 2, tolerance: 0.30,
+        eventSensitivity: { storm: -0.20, sunflare: -0.15, pests: -0.30, drought: -0.25 }
+    },
+    {
+        id: "mint", label: "Mint", file: "mint.png",
+        idealSun: 1, idealWater: 2, idealFertilizer: 1, tolerance: 0.85,
+        eventSensitivity: { storm: -0.05, sunflare: -0.05, pests: -0.10, drought: -0.20 }
+    },
+    {
+        id: "venus", label: "Venus Flytrap", file: "venus.png",
+        idealSun: 2, idealWater: 2, idealFertilizer: 0, tolerance: 0.30,
+        eventSensitivity: { storm: -0.15, sunflare: +0.10, pests: +0.10, drought: -0.30 }
+    },
+    {
+        id: "monstera", label: "Monstera", file: "monstera.png",
+        idealSun: 1, idealWater: 1, idealFertilizer: 1, tolerance: 0.75,
+        eventSensitivity: { storm: -0.05, sunflare: -0.20, pests: -0.25, drought: -0.15 }
+    },
 ];
 
 
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Base probability from conditions only — used for the "Expected" bar */
+function calcBaseProb(
+    plant: PlantConfig,
+    sun: ConditionLevel,
+    water: ConditionLevel,
+    fertilizer: ConditionLevel,
+): number {
+    const totalDev = Math.abs(sun - plant.idealSun)
+        + Math.abs(water - plant.idealWater)
+        + Math.abs(fertilizer - plant.idealFertilizer);
+    const base = 1 - (totalDev / 6) * (1 - plant.tolerance);
+    return Math.max(0, Math.min(0.98, base));
+}
+
+/** Full probability including cumulative random events */
 function calcSuccessProb(
     plant: PlantConfig,
     sun: ConditionLevel,
     water: ConditionLevel,
     fertilizer: ConditionLevel,
-    randomBonus: number
+    events: RandomEvent[]
 ): number {
-    const sunDev = Math.abs(sun - plant.idealSun);
-    const waterDev = Math.abs(water - plant.idealWater);
-    const fertDev = Math.abs(fertilizer - plant.idealFertilizer);
-    const totalDev = sunDev + waterDev + fertDev;
-    const maxDev = 6;
-    const base = 1 - (totalDev / maxDev) * (1 - plant.tolerance * 0.4);
-    return Math.max(0.05, Math.min(0.98, base + randomBonus));
+    const base = calcBaseProb(plant, sun, water, fertilizer);
+
+    const eventBonus = events.reduce((sum, e) => {
+        if (!e) return sum;
+        const raw = plant.eventSensitivity[e];
+        const scaled = raw < 0
+            ? raw * (1 + (1 - plant.tolerance))
+            : raw;
+        return sum + scaled;
+    }, 0);
+
+    return Math.max(0, Math.min(0.98, base + eventBonus));
 }
 
 function seededRandom(seed: number) {
@@ -177,7 +243,7 @@ function SeedSelector({
         >
             <div
                 ref={containerRef}
-                className="relative w-10 h-10 flex-shrink-0"
+                className="relative w-10 h-10 flex-shrink-0 overflow-visible"
                 onMouseEnter={() => { updateTooltipPosition(); setHovered(true); }}
                 onMouseLeave={() => setHovered(false)}
             >
@@ -275,10 +341,11 @@ function InfoTooltip({ text }: { text: string }) {
     );
 }
 
-function BetaDistributionGraph({ thriving, total, label }: {
+function BetaDistributionGraph({ thriving, total, label, expectedProb }: {
     thriving: number;
     total: number;
     label: string;
+    expectedProb?: number;
 }) {
     const width = 220;
     const height = 90;
@@ -321,7 +388,7 @@ function BetaDistributionGraph({ thriving, total, label }: {
         ? `M${toSVG(ciXs[0], 0)} ` + ciXs.map((x, i) => `L${toSVG(x, ciYs[i])}`).join(" ") + ` L${toSVG(ciXs[ciXs.length - 1], 0)} Z`
         : "";
 
-    // Empty state — no plant selected or no seeds planted
+    // Empty state
     if (total === 0) return (
         <div className="p-2.5 rounded-lg mb-2 flex items-center justify-center"
             style={{ background: "rgba(168,255,120,0.08)", border: "1px solid rgba(168,255,120,0.2)", minHeight: "80px" }}>
@@ -331,10 +398,10 @@ function BetaDistributionGraph({ thriving, total, label }: {
         </div>
     );
 
+    const expectedX = expectedProb != null ? expectedProb * width : null;
+
     return (
         <div className="p-2.5 rounded-lg mb-2" style={{ background: "rgba(168,255,120,0.08)", border: "1px solid rgba(168,255,120,0.2)" }}>
-
-            {/* Header row */}
             <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-2">
                 <div />
                 <div className="text-[9px] font-bold tracking-[0.15em] uppercase text-center" style={{ color: "rgba(168,255,120,0.5)" }}>
@@ -342,23 +409,51 @@ function BetaDistributionGraph({ thriving, total, label }: {
                 </div>
             </div>
 
-            {/* Stats row */}
             <div className="flex justify-between mb-1.5 text-[9px]" style={{ color: "rgba(168,255,120,0.6)" }}>
                 <span>90% CI: <span style={{ color: "#a8ff78" }}>{Math.round(lo * 100)}-{Math.round(hi * 100)}%</span></span>
                 <span>peak: <span style={{ color: "#a8ff78" }}>{Math.round(mode * 100)}%</span></span>
                 <span>{thriving}/{total} thriving</span>
             </div>
 
-            <svg width="100%" viewBox={`0 0 ${width} ${height + 10}`} style={{ overflow: "visible" }}>
+            <svg width="100%" viewBox={`0 0 ${width} ${height + 18}`} style={{ overflow: "visible" }}>
                 {ciPath && <path d={ciPath} fill="rgba(168,255,120,0.15)" />}
                 <path d={fillPath} fill="rgba(168,255,120,0.05)" />
                 <path d={path} fill="none" stroke="#a8ff78" strokeWidth="1.5" />
                 <line x1={mode * width} y1={0} x2={mode * width} y2={height} stroke="#a8ff78" strokeWidth="1" strokeDasharray="3,3" opacity="0.6" />
+
+                {/* Expected baseline marker */}
+                {expectedX != null && (
+                    <g>
+                        <line
+                            x1={expectedX} y1={0}
+                            x2={expectedX} y2={height}
+                            stroke="#ffcc44"
+                            strokeWidth="1.5"
+                            strokeDasharray="4,3"
+                            opacity="0.85"
+                        />
+
+                    </g>
+                )}
+
                 <line x1={0} y1={height} x2={width} y2={height} stroke="rgba(168,255,120,0.2)" strokeWidth="1" />
                 {[0, 25, 50, 75, 100].map((v) => (
                     <text key={v} x={v / 100 * width} y={height + 10} textAnchor="middle" fill="rgba(168,255,120,0.4)" fontSize="7">{v}%</text>
                 ))}
             </svg>
+
+            {/* Legend for expected vs observed */}
+
+            <div className="flex items-center gap-3 px-1 mb-1">
+                <div className="flex items-center gap-1">
+                    <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#a8ff78" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+                    <span className="text-[9px]" style={{ color: "rgba(168,255,120,0.6)" }}>observed</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#ffcc44" strokeWidth="1.5" strokeDasharray="4,3" /></svg>
+                    <span className="text-[9px]" style={{ color: "rgba(255,204,68,0.6)" }}>expected</span>
+                </div>
+            </div>
         </div>
     );
 }
@@ -370,8 +465,8 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
     water: ConditionLevel;
     fertilizer: ConditionLevel;
 }) {
-    const prob = Math.round(calcSuccessProb(plant, sun, water, fertilizer, 0) * 100);
-    const idealProb = Math.round(calcSuccessProb(plant, plant.idealSun, plant.idealWater, plant.idealFertilizer, 0) * 100);
+    const prob = Math.round(calcBaseProb(plant, sun, water, fertilizer) * 100);
+    const idealProb = Math.round(calcBaseProb(plant, plant.idealSun, plant.idealWater, plant.idealFertilizer) * 100);
 
     const rows = [
         { icon: "sun.png", label: "Sun", ideal: plant.idealSun, current: sun },
@@ -395,10 +490,8 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
                 whiteSpace: "nowrap",
                 boxShadow: "0 0 20px rgba(168,255,120,0.15)",
                 minWidth: "170px",
-
             }}
         >
-            {/* Header */}
             <div className="flex items-center gap-2 mb-2 pb-2" style={{ borderBottom: "1px solid rgba(168,255,120,0.2)" }}>
                 <img src={`/${plant.file}`} alt={plant.label} className="w-8 h-8 object-contain" />
                 <div>
@@ -409,14 +502,12 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
                 </div>
             </div>
 
-            {/* Column headers */}
             <div className="grid grid-cols-[10px_1fr_1fr] gap-x-3 mb-1">
                 <div />
                 <div className="text-[9px] tracking-widest uppercase text-center" style={{ color: "rgba(168,255,120,0.4)" }}>ideal</div>
                 <div className="text-[9px] tracking-widest uppercase text-center" style={{ color: "rgba(168,255,120,0.4)" }}>current</div>
             </div>
 
-            {/* Condition rows */}
             {rows.map(({ icon, label, ideal, current }) => (
                 <div key={label} className="grid grid-cols-[10px_1fr_1fr] gap-x-3 mb-0.5 items-center">
                     <img src={`/${icon}`} alt={label} className="w-3 h-3 object-contain" />
@@ -429,7 +520,6 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
                 </div>
             ))}
 
-            {/* Probability row */}
             <div className="grid grid-cols-[10px_1fr_1fr] gap-x-3 mt-2 pt-2" style={{ borderTop: "1px solid rgba(168,255,120,0.2)" }}>
                 <div />
                 <div className="text-center text-xs font-black" style={{ color: "#a8ff78" }}>{idealProb}%</div>
@@ -449,15 +539,18 @@ export default function GardenSimulator() {
     const [water, setWater] = useState<ConditionLevel>(1);
     const [fertilizer, setFertilizer] = useState<ConditionLevel>(1);
     const [randomnessEnabled, setRandomnessEnabled] = useState(false);
-    const [randomBonus, setRandomBonus] = useState(0);
+
     const [randomEvent, setRandomEvent] = useState<RandomEvent>(null);
     const [outcomes, setOutcomes] = useState<Record<string, PlantOutcome[]>>({});
     const [positionSeed] = useState(() => Math.floor(Math.random() * 99999));
     const [simulated, setSimulated] = useState(false);
     const [conditionsLocked, setConditionsLocked] = useState(false);
     const [eventAnim, setEventAnim] = useState(false);
-    const [controlsOpen, setControlsOpen] = useState(true);
+    const [controlsOpen] = useState(true);
     const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+    const [eventLog, setEventLog] = useState<RandomEvent[]>([]);
+    const [experimentHistory, setExperimentHistory] = useState<ExperimentRecord[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
     const gardenRef = useRef<HTMLDivElement>(null);
 
     const handleToggleRandomness = () => {
@@ -465,7 +558,6 @@ export default function GardenSimulator() {
         setRandomnessEnabled(v => !v);
         if (randomnessEnabled) {
             setRandomEvent(null);
-            setRandomBonus(0);
         }
     };
 
@@ -550,26 +642,49 @@ export default function GardenSimulator() {
         };
     }, []);
 
+    /** Re-evaluate each existing plant's thriving state against the current event log.
+     *  Uses the stored baseRoll so positions are stable; only thriving flips. */
+    const reEvaluateOutcomes = useCallback((
+        currentOutcomes: Record<string, PlantOutcome[]>,
+        currentSun: ConditionLevel,
+        currentWater: ConditionLevel,
+        currentFertilizer: ConditionLevel,
+        currentEvents: RandomEvent[]
+    ) => {
+        const next: Record<string, PlantOutcome[]> = {};
+        PLANTS.forEach((plant) => {
+            const existing = currentOutcomes[plant.id] || [];
+            const prob = calcSuccessProb(plant, currentSun, currentWater, currentFertilizer, currentEvents);
+            next[plant.id] = existing.map((o) => {
+                const thriving = o.baseRoll < prob;
+                return {
+                    ...o,
+                    thriving,
+                    opacity: thriving ? 0.85 + (1 - o.baseRoll) * 0.13 : 0.22 + o.baseRoll * 0.12,
+                    scale: thriving ? 0.7 + (1 - o.baseRoll) * 0.5 : 0.35 + o.baseRoll * 0.25,
+                };
+            });
+        });
+        return next;
+    }, []);
+
     const simulate = useCallback(() => {
         setShowPlants(false);
         setConditionsLocked(true);
-        const bonus = randomnessEnabled
-            ? randomBonus + (randomEvent ? (Math.random() - 0.5) * 0.3 : 0)
-            : 0;
         setOutcomes((prevOutcomes) => {
             const newOutcomes: Record<string, PlantOutcome[]> = {};
             PLANTS.forEach((plant) => {
                 const count = seedCounts[plant.id] || 0;
-                const prob = calcSuccessProb(plant, sun, water, fertilizer, bonus);
+                const prob = calcSuccessProb(plant, sun, water, fertilizer, randomnessEnabled ? eventLog : []);
+
                 const existing = prevOutcomes[plant.id] || [];
                 const updated = existing.slice(0, count).map((prev) => {
-                    const thriving = Math.random() < prob;
+                    const thriving = prev.baseRoll < prob;
                     return {
                         ...prev,
                         thriving,
-                        isDead: prev.isDead || prob < 0.2,
-                        opacity: thriving ? 0.85 + Math.random() * 0.15 : 0.25 + Math.random() * 0.15,
-                        scale: thriving ? 0.7 + Math.random() * 0.5 : 0.4 + Math.random() * 0.3,
+                        opacity: thriving ? 0.85 + (1 - prev.baseRoll) * 0.13 : 0.22 + prev.baseRoll * 0.12,
+                        scale: thriving ? 0.7 + (1 - prev.baseRoll) * 0.5 : 0.35 + prev.baseRoll * 0.25,
                     };
                 });
                 newOutcomes[plant.id] = updated;
@@ -577,16 +692,16 @@ export default function GardenSimulator() {
             return newOutcomes;
         });
         setSimulated(true);
-    }, [sun, water, fertilizer, randomBonus, randomEvent, positionSeed]);
+    }, [sun, water, fertilizer, eventLog, randomnessEnabled, seedCounts, positionSeed]);
 
     const simulateNew = useCallback(() => {
         setShowPlants(false);
-        const bonus = randomBonus + (randomEvent ? (Math.random() - 0.5) * 0.3 : 0);
         setOutcomes((prevOutcomes) => {
             const newOutcomes: Record<string, PlantOutcome[]> = {};
             PLANTS.forEach((plant) => {
                 const count = seedCounts[plant.id] || 0;
-                const prob = calcSuccessProb(plant, sun, water, fertilizer, bonus);
+                const prob = calcSuccessProb(plant, sun, water, fertilizer, randomnessEnabled ? eventLog : []);
+
                 const existing = prevOutcomes[plant.id] || [];
                 const updated = existing.slice(0, count).map((prev) => ({ ...prev }));
                 if (count > existing.length) {
@@ -595,12 +710,14 @@ export default function GardenSimulator() {
                         positionSeed + PLANTS.indexOf(plant) * 1000 + existing.length * 37
                     );
                     newPositions.forEach((pos) => {
-                        const thriving = Math.random() < prob;
+                        const baseRoll = Math.random();
+                        const thriving = baseRoll < prob;
                         updated.push({
                             thriving,
+                            baseRoll,
                             isDead: prob < 0.2,
-                            opacity: thriving ? 0.85 + Math.random() * 0.15 : 0.25 + Math.random() * 0.15,
-                            scale: thriving ? 0.7 + Math.random() * 0.5 : 0.4 + Math.random() * 0.3,
+                            opacity: thriving ? 0.85 + (1 - baseRoll) * 0.13 : 0.22 + baseRoll * 0.12,
+                            scale: thriving ? 0.7 + (1 - baseRoll) * 0.5 : 0.35 + baseRoll * 0.25,
                             flip: Math.random() < 0.5,
                             ...pos,
                         });
@@ -611,7 +728,7 @@ export default function GardenSimulator() {
             return newOutcomes;
         });
         setSimulated(true);
-    }, [seedCounts]);
+    }, [seedCounts, sun, water, fertilizer, randomnessEnabled, eventLog, positionSeed]);
 
     useEffect(() => {
         if (simulated) simulate();
@@ -624,54 +741,86 @@ export default function GardenSimulator() {
     }, [seedCounts, simulated]);
 
     const triggerRandomEvent = () => {
-        const events: RandomEvent[] = ["storm", "sunflare", "pests"];
-        const evt = events[Math.floor(Math.random() * 3)];
-        const bonusMap: Record<string, number> = { storm: -0.2, sunflare: 0.15, pests: -0.25 };
+        const events: RandomEvent[] = ["storm", "sunflare", "pests", "drought"];
+        const evt = events[Math.floor(Math.random() * events.length)];
+
         setRandomEvent(evt);
-        setRandomBonus(bonusMap[evt!] || 0);
+        const newLog = [...eventLog, evt];
+        setEventLog(newLog);
         setEventAnim(true);
         setTimeout(() => setEventAnim(false), 2000);
+
+        // Re-evaluate outcomes immediately with the new event applied
+        if (simulated) {
+            setOutcomes((prev) => reEvaluateOutcomes(prev, sun, water, fertilizer, newLog));
+        }
     };
 
     const reset = () => {
+        if (simulated) {
+            const record: ExperimentRecord = {
+                id: experimentHistory.length + 1,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                sun, water, fertilizer,
+                events: eventLog,
+                results: Object.fromEntries(
+                    PLANTS.map(p => {
+                        const outs = outcomes[p.id] || [];
+                        return [p.id, {
+                            total: outs.length,
+                            thriving: outs.filter(o => o.thriving).length,
+                        }];
+                    })
+                ),
+            };
+            setExperimentHistory(prev => [...prev, record]);
+        }
         setSeedCounts(Object.fromEntries(PLANTS.map((p) => [p.id, 0])));
         setSun(1);
         setWater(1);
         setFertilizer(1);
-        setRandomBonus(0);
         setRandomEvent(null);
         setOutcomes({});
         setShowPlants(true);
         setSimulated(false);
         setConditionsLocked(false);
+        setEventLog([]);
     };
 
+    // Expected = conditions only, no events
+    // Observed = conditions + events
     const stats = PLANTS.map((plant) => {
         const outs = outcomes[plant.id] || [];
         const total = outs.length;
         const thriving = outs.filter((o) => o.thriving).length;
-        const prob = calcSuccessProb(plant, sun, water, fertilizer, randomBonus);
-        return { plant, total, thriving, prob: Math.round(prob * 100) };
+        const expectedProb = calcBaseProb(plant, sun, water, fertilizer);
+        const observedProb = calcSuccessProb(plant, sun, water, fertilizer, randomnessEnabled ? eventLog : []);
+
+        return { plant, total, thriving, expectedProb: Math.round(expectedProb * 100), observedProb: Math.round(observedProb * 100) };
     });
 
     const totalSeeds = Object.values(seedCounts).reduce((a, b) => a + b, 0);
-    const totalThriving = Object.values(outcomes).flat().filter((o) => o.thriving).length;
 
     const eventColors: Record<string, string> = {
         storm: "rgba(80,120,255,0.25)",
         sunflare: "rgba(255,220,60,0.25)",
         pests: "rgba(180,80,20,0.25)",
+        drought: "rgba(200,140,0,0.25)",
     };
+
     const eventLabel: Record<string, string> = {
         storm: "STORM!",
         sunflare: "SUN FLARE!",
         pests: "PEST ATTACK!",
+        drought: "DROUGHT!",
     };
 
     const isDragging = dragRef.current !== null;
 
+    const selectedStats = selectedPlantId ? stats.find(s => s.plant.id === selectedPlantId) : null;
+
     return (
-        <div className="min-h-screen  overflow-x-hidden" style={{ color: "#a8ff78" }}>
+        <div className="min-h-screen overflow-x-hidden" style={{ color: "#a8ff78" }}>
 
             {/* Title */}
             <header
@@ -690,10 +839,9 @@ export default function GardenSimulator() {
                 </h1>
             </header>
 
-            {/* Main layout — single col on mobile, 3-col on desktop */}
+            {/* Main layout */}
             <div className="grid grid-cols-1 md:grid-cols-[280px_1fr_260px] md:grid-rows-[auto_1fr] gap-3 px-4 py-3 max-w-[1280px] mx-auto"
                 style={{ maxHeight: "calc(100vh - 150px)" }}>
-                
 
                 {/* ── Top centre: environmental controls ──────────────────────────── */}
                 <section
@@ -703,24 +851,20 @@ export default function GardenSimulator() {
                         border: "1px solid rgba(168,255,120,0.15)",
                     }}
                 >
-
-                    {/* Stack controls vertically on mobile, row on md+ */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 md:gap-4 items-center">
-
                         <ConditionControl icon="sun.png" label="Sunlight" value={sun} onChange={conditionsLocked ? () => { } : setSun} locked={conditionsLocked} />
                         <ConditionControl icon="water.png" label="Water" value={water} onChange={conditionsLocked ? () => { } : setWater} locked={conditionsLocked} />
                         <ConditionControl icon="fertilizer.png" label="Fertilizer" value={fertilizer} onChange={conditionsLocked ? () => { } : setFertilizer} locked={conditionsLocked} />
 
-                        <div className="flex flex-col gap-1 mx-auto lg:ml-2  w-35">
-                            {/* Toggle — locked once experiment starts */}
+                        <div className="flex flex-col gap-1 mx-auto lg:ml-2 w-35">
                             <button
                                 onClick={handleToggleRandomness}
                                 disabled={conditionsLocked}
-                                className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all "
+                                className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all"
                                 style={{
-                                    background: conditionsLocked ? "rgba(255,180,0,0.05)" : " rgba(255,180,0,0.15)",
-                                    border: `1.5px solid ${conditionsLocked ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6) "}`,
-                                    color: conditionsLocked ? " rgba(255,180,0,0.4)" : "#ffcc44",
+                                    background: conditionsLocked ? "rgba(255,180,0,0.05)" : "rgba(255,180,0,0.15)",
+                                    border: `1.5px solid ${conditionsLocked ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6)"}`,
+                                    color: conditionsLocked ? "rgba(255,180,0,0.4)" : "#ffcc44",
                                     cursor: conditionsLocked ? "not-allowed" : "pointer",
                                     opacity: conditionsLocked ? 0.5 : 1,
                                 }}
@@ -728,11 +872,10 @@ export default function GardenSimulator() {
                                 {randomnessEnabled ? "RANDOMNESS ON" : "RANDOMNESS OFF"}
                             </button>
 
-                            {/* Trigger — only blocked when randomness is off */}
                             <button
                                 onClick={() => { if (randomnessEnabled) triggerRandomEvent(); }}
                                 disabled={!randomnessEnabled}
-                                className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all  "
+                                className="py-1.5 px-3 rounded-lg text-[10px] font-bold tracking-wide uppercase transition-all"
                                 style={{
                                     background: randomnessEnabled ? "rgba(255,180,0,0.15)" : "rgba(255,180,0,0.05)",
                                     border: `1.5px solid ${randomnessEnabled ? "rgba(255,180,0,0.6)" : "rgba(255,180,0,0.2)"}`,
@@ -745,7 +888,7 @@ export default function GardenSimulator() {
                             </button>
                         </div>
                     </div>
-                    <div className="flex items-center justify-center ">
+                    <div className="flex items-center justify-center">
                         {conditionsLocked && (
                             <div className="text-[9px] tracking-widest uppercase flex items-center gap-1 mt-3 sm:mt-0"
                                 style={{ color: "#ffcc44" }}>
@@ -757,7 +900,7 @@ export default function GardenSimulator() {
 
                 {/* ── Left: seed selection ─────────────────────────────────────── */}
                 <aside
-                    className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2 "
+                    className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2"
                     style={{
                         border: "1px solid rgba(168,255,120,0.15)",
                     }}
@@ -774,9 +917,7 @@ export default function GardenSimulator() {
                         ↺ NEW EXPERIMENT
                     </button>
 
-                     <div
-                        className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer flex justify-center items-center py-0"
-                    >
+                    <div className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer flex justify-center items-center py-0">
                         SELECT SEEDS
                     </div>
 
@@ -822,7 +963,7 @@ export default function GardenSimulator() {
                         {/* Random event overlay */}
                         {eventAnim && randomEvent && (
                             <div
-                                className="absolute inset-0 z-[90] rounded-xl pointer-events-none flex flex-col  items-center justify-center"
+                                className="absolute inset-0 z-[90] rounded-xl pointer-events-none flex flex-col items-center justify-center"
                                 style={{
                                     background: eventColors[randomEvent],
                                     animation: "eventFlash 3s ease-out forwards",
@@ -830,7 +971,12 @@ export default function GardenSimulator() {
                                 }}
                             >
                                 <img
-                                    src={randomEvent === "storm" ? "/storm.png" : randomEvent === "sunflare" ? "/sun.png" : "/pest.png"}
+                                    src={
+                                        randomEvent === "storm" ? "/storm.png" :
+                                            randomEvent === "sunflare" ? "/sun.png" :
+                                                randomEvent === "drought" ? "/drought.png" :
+                                                    "/pest.png"
+                                    }
                                     alt={randomEvent}
                                     className="object-contain"
                                     style={{
@@ -851,12 +997,6 @@ export default function GardenSimulator() {
                                 >
                                     {eventLabel[randomEvent]}
                                 </span>
-
-
-                                <div className="text-5" >
-                                    {randomBonus > 0 ? `+${Math.round(randomBonus * 100)}%` : `${Math.round(randomBonus * 100)}%`} modifier
-                                </div>
-
                             </div>
                         )}
 
@@ -895,7 +1035,7 @@ export default function GardenSimulator() {
                                                 filter: outcome.thriving
                                                     ? isDraggingThis ? "drop-shadow(0 4px 12px rgba(168,255,120,0.8))" : ""
                                                     : `grayscale(80%) brightness(0.5) blur(0.5px)${isDraggingThis ? " drop-shadow(0 4px 12px rgba(255,100,100,0.6))" : ""}`,
-                                                transition: "all 0.3s ease",
+                                                transition: "all 0.5s ease",
                                                 pointerEvents: "none",
                                             }}
                                         />
@@ -935,6 +1075,171 @@ export default function GardenSimulator() {
                             </div>
                         )}
                     </div>
+
+                    {showHistory && (
+                        <div
+                            className="absolute inset-0 z-[200] rounded-xl flex flex-col"
+                            style={{
+                                background: "rgba(8,16,0,0.97)",
+                                border: "2px solid rgba(168,255,120,0.25)",
+                                backdropFilter: "blur(8px)",
+                            }}
+                        >
+                            <div className="flex items-center justify-between px-4 py-3"
+                                style={{ borderBottom: "1px solid rgba(168,255,120,0.15)" }}>
+                                <div className="flex items-center gap-2">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8ff78" strokeWidth="2.5">
+                                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                    </svg>
+                                    <span className="text-xs font-black tracking-[0.2em] uppercase" style={{ color: "#a8ff78" }}>
+                                        Experiment History
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setShowHistory(false)}
+                                    className="w-6 h-6 rounded flex items-center justify-center text-sm cursor-pointer transition-all"
+                                    style={{ background: "rgba(255,80,80,0.12)", border: "1px solid rgba(255,80,80,0.3)", color: "#ff7070" }}
+                                >✕</button>
+                            </div>
+
+                            <div className="history-scroll" style={{ flex: 1, overflowX: "auto", overflowY: "auto" }}>
+                                {experimentHistory.length === 0 ? (
+                                    <div className="flex items-center justify-center h-full text-[10px] tracking-widest uppercase"
+                                        style={{ color: "rgba(168,255,120,0.3)" }}>
+                                        No experiments yet
+                                    </div>
+                                ) : (() => {
+                                    const activePlants = PLANTS.filter(p =>
+                                        experimentHistory.some(exp => (exp.results[p.id]?.total ?? 0) > 0)
+                                    );
+
+                                    const W_EXP = 88;
+                                    const W_COND = 38;
+                                    const W_EVENT = 100;
+                                    const W_PLANT = 80;
+
+                                    const DIVIDER_SHADOW = "inset -1px 0 0 rgba(168,255,120,0.15)";
+                                    const EVENT_DIVIDER = "inset -1px 0 0 rgba(168,255,120,0.25)";
+                                    const HEADER_BOTTOM = "inset 0 -2px 0 rgba(168,255,120,0.2)";
+
+                                    const stickyHead = (left: number, extra?: React.CSSProperties): React.CSSProperties => ({
+                                        position: "sticky",
+                                        top: 0,
+                                        left,
+                                        zIndex: 4,
+                                        background: "rgba(8,16,0,0.99)",
+                                        ...extra,
+                                    });
+
+                                    const stickyBody = (left: number, bg: string, extra?: React.CSSProperties): React.CSSProperties => ({
+                                        position: "sticky",
+                                        left,
+                                        zIndex: 2,
+                                        background: bg,
+                                        ...extra,
+                                    });
+
+                                    return (
+                                        <table style={{
+                                            borderCollapse: "collapse",
+                                            fontSize: "10px",
+                                            tableLayout: "fixed",
+                                            width: "100%",
+                                            minWidth: W_EXP + W_COND * 3 + W_EVENT + activePlants.length * W_PLANT,
+                                        }}>
+                                            <thead>
+                                                <tr>
+                                                    <th style={stickyHead(0, { width: W_EXP, minWidth: W_EXP, padding: "12px 8px 10px", textAlign: "left", verticalAlign: "bottom", boxShadow: `${DIVIDER_SHADOW}, ${HEADER_BOTTOM}` })}>
+                                                        <span style={{ color: "rgba(168,255,120,0.5)", fontWeight: 700, letterSpacing: "0.15em", fontSize: "10px", textTransform: "uppercase" }}>
+                                                            {experimentHistory.length} total
+                                                        </span>
+                                                    </th>
+                                                    <th style={stickyHead(W_EXP, { width: W_COND, minWidth: W_COND, padding: "12px 4px 10px", textAlign: "center", verticalAlign: "bottom", boxShadow: HEADER_BOTTOM })}>
+                                                        <img src="/sun.png" style={{ width: 24, height: 24, objectFit: "contain", display: "block", margin: "0 auto" }} />
+                                                    </th>
+                                                    <th style={stickyHead(W_EXP + W_COND, { width: W_COND, minWidth: W_COND, padding: "12px 4px 10px", textAlign: "center", verticalAlign: "bottom", boxShadow: HEADER_BOTTOM })}>
+                                                        <img src="/water.png" style={{ width: 24, height: 24, objectFit: "contain", display: "block", margin: "0 auto" }} />
+                                                    </th>
+                                                    <th style={stickyHead(W_EXP + W_COND * 2, { width: W_COND, minWidth: W_COND, padding: "12px 4px 10px", textAlign: "center", verticalAlign: "bottom", boxShadow: HEADER_BOTTOM })}>
+                                                        <img src="/fertilizer.png" style={{ width: 24, height: 24, objectFit: "contain", display: "block", margin: "0 auto" }} />
+                                                    </th>
+                                                    <th style={stickyHead(W_EXP + W_COND * 3, { width: W_EVENT, minWidth: W_EVENT, padding: "12px 4px 10px", textAlign: "center", verticalAlign: "bottom", boxShadow: `${EVENT_DIVIDER}, ${HEADER_BOTTOM}` })}>
+                                                        <span style={{ color: "rgba(168,255,120,0.4)", fontWeight: 700, fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                                                            RANDOM<br />EVENT
+                                                        </span>
+                                                    </th>
+                                                    {activePlants.map(plant => (
+                                                        <th key={plant.id} style={{ position: "sticky", top: 0, zIndex: 3, background: "rgba(8,16,0,0.99)", width: W_PLANT, minWidth: W_PLANT, padding: "8px 4px 10px", textAlign: "center", verticalAlign: "bottom", borderLeft: "1px solid rgba(168,255,120,0.06)", boxShadow: HEADER_BOTTOM }}>
+                                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                                                                <img src={`/${plant.file}`} style={{ width: 30, height: 30, objectFit: "contain" }} />
+                                                                <span style={{ color: "rgba(168,255,120,0.45)", fontSize: "10px", lineHeight: 1.2, textAlign: "center" }}>{plant.label}</span>
+                                                            </div>
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {experimentHistory.map((exp, ei) => {
+                                                    const rowBg = ei % 2 === 0 ? "rgba(168,255,120,0.025)" : "transparent";
+                                                    const stickyBg = ei % 2 === 0 ? "rgba(12,22,4,0.99)" : "rgba(8,16,0,0.99)";
+                                                    return (
+                                                        <tr key={exp.id} style={{ background: rowBg, borderBottom: "1px solid rgba(168,255,120,0.08)" }}>
+                                                            <td style={stickyBody(0, stickyBg, { width: W_EXP, padding: "8px 8px", verticalAlign: "middle", boxShadow: DIVIDER_SHADOW })}>
+                                                                <div style={{ color: "#a8ff78", fontWeight: 900, fontSize: "11px", letterSpacing: "0.08em" }}>EXP {exp.id}</div>
+                                                                <div style={{ color: "rgba(168,255,120,0.38)", fontSize: "10px", marginTop: "2px" }}>{exp.timestamp}</div>
+                                                            </td>
+                                                            <td style={stickyBody(W_EXP, stickyBg, { width: W_COND, padding: "8px 4px", textAlign: "center", verticalAlign: "middle" })}>
+                                                                <span style={{ color: "rgba(168,255,120,0.8)", fontWeight: 700, fontSize: "10px" }}>{["L", "M", "H"][exp.sun]}</span>
+                                                            </td>
+                                                            <td style={stickyBody(W_EXP + W_COND, stickyBg, { width: W_COND, padding: "8px 4px", textAlign: "center", verticalAlign: "middle" })}>
+                                                                <span style={{ color: "rgba(168,255,120,0.8)", fontWeight: 700, fontSize: "10px" }}>{["L", "M", "H"][exp.water]}</span>
+                                                            </td>
+                                                            <td style={stickyBody(W_EXP + W_COND * 2, stickyBg, { width: W_COND, padding: "8px 4px", textAlign: "center", verticalAlign: "middle" })}>
+                                                                <span style={{ color: "rgba(168,255,120,0.8)", fontWeight: 700, fontSize: "10px" }}>{["L", "M", "H"][exp.fertilizer]}</span>
+                                                            </td>
+                                                            <td style={stickyBody(W_EXP + W_COND * 3, stickyBg, { width: W_EVENT, padding: "8px 4px", textAlign: "center", verticalAlign: "middle", boxShadow: EVENT_DIVIDER })}>
+                                                                {(() => {
+                                                                    const counts = {} as Record<string, number>;
+                                                                    exp.events.forEach(e => { if (e) counts[e] = (counts[e] || 0) + 1; });
+                                                                    const entries = Object.entries(counts);
+                                                                    return entries.length === 0 ? (
+                                                                        <span style={{ color: "rgba(168,255,120,0.18)", fontSize: "11px" }}>—</span>
+                                                                    ) : (
+                                                                        <div style={{ display: "flex", gap: "4px", justifyContent: "center", flexWrap: "wrap" }}>
+                                                                            {entries.map(([evt, count]) => (
+                                                                                <div key={evt} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1px" }}>
+                                                                                    <img src={evt === "storm" ? "/storm.png" : evt === "sunflare" ? "/sun.png" : evt === "drought" ? "/drought.png" : "/pest.png"} style={{ width: 18, height: 18, objectFit: "contain" }} />
+                                                                                    <span style={{ color: "#ffcc44", fontSize: "10px", fontWeight: 700 }}>{count}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </td>
+                                                            {activePlants.map(plant => {
+                                                                const r = exp.results[plant.id];
+                                                                if (!r || r.total === 0) return (
+                                                                    <td key={plant.id} style={{ width: W_PLANT, padding: "8px 4px", textAlign: "center", verticalAlign: "middle", borderLeft: "1px solid rgba(168,255,120,0.06)", color: "rgba(168,255,120,0.15)", fontSize: "11px" }}>—</td>
+                                                                );
+                                                                const rate = Math.round((r.thriving / r.total) * 100);
+                                                                const col = rate >= 70 ? "#a8ff78" : rate >= 40 ? "#ffcc44" : "#ff7070";
+                                                                return (
+                                                                    <td key={plant.id} style={{ width: W_PLANT, padding: "8px 4px", textAlign: "center", verticalAlign: "middle", borderLeft: "1px solid rgba(168,255,120,0.06)" }}>
+                                                                        <div style={{ color: "rgba(168,255,120,0.5)", fontSize: "10px", marginBottom: "1px" }}>{r.thriving}/{r.total}</div>
+                                                                        <div style={{ color: col, fontWeight: 900, fontSize: "11px" }}>{rate}%</div>
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ── Right: stats ─────────────────────────────────────────────────── */}
@@ -946,7 +1251,20 @@ export default function GardenSimulator() {
                     }}
                 >
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-1.5">
-                        <div />
+                        <div>
+                            <button
+                                onClick={() => setShowHistory(v => !v)}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold tracking-widest uppercase transition-all cursor-pointer"
+                                style={{
+                                    color: experimentHistory.length > 0 ? "#a8ff78" : "rgba(168,255,120,0.6)",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                </svg>
+                            </button>
+                        </div>
                         <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-center" style={{ color: "rgba(168,255,120,0.6)" }}>
                             OBSERVED
                         </div>
@@ -955,31 +1273,28 @@ export default function GardenSimulator() {
                         </div>
                     </div>
 
-                    {simulated && (() => {
-                        const selected = selectedPlantId
-                            ? stats.find(s => s.plant.id === selectedPlantId)
-                            : null;
-                        return (
-                            <BetaDistributionGraph
-                                thriving={selected?.thriving ?? 0}
-                                total={selected?.total ?? 0}
-                                label={selected?.plant.label ?? ""}
-                            />
-                        );
-                    })()}
+                    {simulated && (
+                        <BetaDistributionGraph
+                            thriving={selectedStats?.thriving ?? 0}
+                            total={selectedStats?.total ?? 0}
+                            label={selectedStats?.plant.label ?? ""}
+                            expectedProb={selectedStats ? selectedStats.expectedProb / 100 : undefined}
+                        />
+                    )}
 
                     <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-center" style={{ color: "rgba(168,255,120,0.6)" }}>
                         EXPECTED
                     </div>
                     <div className="overflow-y-auto sidebar-scroll">
-
-                        {stats.map(({ plant, total, thriving, prob }) => {
+                        {stats.map(({ plant, total, thriving, expectedProb, observedProb }) => {
                             const hasSims = simulated && total > 0;
+                            const hasEvents = randomnessEnabled && eventLog.filter(Boolean).length > 0;
+                            const showGap = hasSims && hasEvents && observedProb !== expectedProb;
                             return (
                                 <div
                                     key={plant.id}
                                     onClick={() => setSelectedPlantId(plant.id)}
-                                    className="p-2 my-1 rounded-lg cursor-pointer transition-all "
+                                    className="p-2 my-1 rounded-lg cursor-pointer transition-all"
                                     style={{
                                         background: selectedPlantId === plant.id
                                             ? "rgba(168,255,120,0.08)"
@@ -992,54 +1307,99 @@ export default function GardenSimulator() {
                                 >
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-[10px] font-bold tracking-wide" style={{ color: "#a8ff78" }}>{plant.label}</span>
-                                        <span
-                                            className="text-[11px] font-black"
-                                            style={{ color: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070" }}
-                                        >
-                                            {prob}%
-                                        </span>
+                                        <div className="flex items-center gap-1">
+
+                                            <span className="text-[10px] font-bold" style={{ color: expectedProb >= 70 ? "#a8ff78" : expectedProb >= 40 ? "#ffcc44" : "#ff7070" }}>
+                                                {expectedProb}%
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="h-1 rounded-sm overflow-hidden" style={{ background: "rgba(168,255,120,0.1)" }}>
+
+                                    {/* Expected bar */}
+                                    <div className="h-1 rounded-sm overflow-hidden mb-0.5" style={{ background: "rgba(168,255,120,0.1)" }}>
                                         <div
                                             className="h-full rounded-sm transition-all duration-500"
                                             style={{
-                                                width: `${prob}%`,
-                                                background: prob >= 70 ? "#a8ff78" : prob >= 40 ? "#ffcc44" : "#ff7070",
+                                                width: `${expectedProb}%`,
+                                                background: expectedProb >= 70 ? "#a8ff78" : expectedProb >= 40 ? "#ffcc44" : "#ff7070",
+                                                opacity: showGap ? 0.5 : 1,
                                             }}
                                         />
                                     </div>
-                                    {hasSims && (
-                                        <div className="text-[9px] mt-0.5" style={{ color: "rgba(168,255,120,0.5)" }}>
-                                            {thriving}/{total} thriving
-                                        </div>
-                                    )}
+
+                                    {showGap && (
+                                        <>
+                                            <div className="h-1 rounded-sm overflow-hidden" style={{ background: "rgba(168,255,120,0.05)" }}>
+                                                <div
+                                                    className="h-full rounded-sm transition-all duration-700"
+                                                    style={{
+                                                        width: `${observedProb}%`,
+                                                        background: observedProb >= 70 ? "rgba(168,255,120,0.9)" : observedProb >= 40 ? "#ffcc44" : "#ff7070",
+                                                    }}
+                                                />
+                                            </div>
+                                             <div className="flex justify-between items-center mt-0.5">
+            <div className="text-[9px]" style={{ color: "rgba(168,255,120,0.5)" }}>
+                {hasSims ? `${thriving}/${total} thriving` : ""}
+            </div>
+            <div className="text-[10px] font-bold" style={{ color: observedProb >= 70 ? "rgba(168,255,120,0.9)" : observedProb >= 40 ? "rgba(255,204,68,0.9)" : "rgba(255,112,112,0.9)" }}>
+                {observedProb}%
+            </div>
+        </div>
+    </>
+)}
+
+{hasSims && !showGap && (
+    <div className="text-[9px] mt-0.5" style={{ color: "rgba(168,255,120,0.5)" }}>
+        {thriving}/{total} thriving
+    </div>
+)}
+
                                 </div>
                             );
                         })}
                     </div>
-
                 </aside>
             </div>
 
             <style>{`
-                @keyframes pulse {
-                    from { opacity: 0.7; transform: scale(1); }
-                    to   { opacity: 1;   transform: scale(1.05); }
-                }
-                @keyframes eventFlash {
-                    0%   { opacity: 0; }
-                    20%  { opacity: 1; }
-                    80%  { opacity: 1; }
-                    100% { opacity: 0; }
-                }
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to   { transform: rotate(360deg); }
-                }
-                button:hover { filter: brightness(1.15); }
-                * { box-sizing: border-box; }
-                body { margin: 0; }
-            `}</style>
+    @keyframes pulse {
+        from { opacity: 0.7; transform: scale(1); }
+        to   { opacity: 1;   transform: scale(1.05); }
+    }
+    @keyframes eventFlash {
+        0%   { opacity: 0; }
+        20%  { opacity: 1; }
+        80%  { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    button:hover { filter: brightness(1.15); }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+
+    .sidebar-scroll::-webkit-scrollbar { width: 2px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(168,255,120,0.2); border-radius: 999px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(168,255,120,0.4); }
+
+    .history-scroll::-webkit-scrollbar { width: 2px; height: 7px; }
+    .history-scroll::-webkit-scrollbar-track { background: transparent; }
+    .history-scroll::-webkit-scrollbar-thumb { background: rgba(168,255,120,0.2); border-radius: 999px; }
+    .history-scroll::-webkit-scrollbar-thumb:hover { background: rgba(168,255,120,0.4); }
+
+    .history-scroll {
+        scrollbar-gutter: stable;
+        overflow-y: auto;
+    }
+
+    .history-scroll::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+`}</style>
         </div>
     );
 }

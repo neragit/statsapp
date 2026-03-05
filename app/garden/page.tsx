@@ -211,7 +211,7 @@ function ConditionControl({
 }
 
 function SeedSelector({
-    plant, count, onChange, sun, water, fertilizer,
+    plant, count, onChange, sun, water, fertilizer, locked = false
 }: {
     plant: PlantConfig;
     count: number;
@@ -219,11 +219,28 @@ function SeedSelector({
     sun: ConditionLevel;
     water: ConditionLevel;
     fertilizer: ConditionLevel;
+    locked?: boolean;
 }) {
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [tooltipTop, setTooltipTop] = useState(0);
     const [hovered, setHovered] = useState(false);
+
+    const incrementRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const countRef = useRef(count);
+    useEffect(() => { countRef.current = count; }, [count]);
+
+    const startPress = (fn: () => void) => {
+        fn();
+        incrementRef.current = setInterval(fn, 150);
+    };
+
+    const stopPress = () => {
+        if (incrementRef.current) {
+            clearInterval(incrementRef.current);
+            incrementRef.current = null;
+        }
+    };
 
     const updateTooltipPosition = () => {
         if (!imageRef.current || !containerRef.current) return;
@@ -271,22 +288,33 @@ function SeedSelector({
 
             <div className="flex items-center gap-1">
                 <button
-                    onClick={() => onChange(Math.max(0, count - 1))}
+                    onMouseDown={() => !locked && startPress(() => onChange(Math.max(0, countRef.current - 1)))}
+                    onTouchStart={() => !locked && startPress(() => onChange(Math.max(0, countRef.current - 1)))}
+                    onMouseUp={stopPress}
+                    onMouseLeave={stopPress}
+                    onTouchEnd={stopPress}
+                    disabled={locked}
                     className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold transition-all cursor-pointer"
                     style={{
-                        background: "rgba(168,255,120,0.15)",
-                        color: "#a8ff78",
+                        background: count === 0 && !locked ? "rgba(168,255,120,0.05)" : "rgba(168,255,120,0.15)",
+                        color: count === 0 || locked ? "rgba(168,255,120,0.3)" : "#a8ff78",
+                        cursor: locked || count === 0 ? "not-allowed" : "pointer",
                         border: "1px solid rgba(168,255,120,0.3)",
                     }}
                 >-</button>
-                <span className="w-5 text-center text-xs text-[#a8ff78]">{count}</span>
+                <span className="w-5 text-center text-xs " style={{ color: locked ? "rgba(168,255,120,0.3)" : "#a8ff78" }}>{count}</span>
                 <button
-                    onClick={() => onChange(Math.min(50, count + 1))}
+                    onMouseDown={() => (!locked && countRef.current < 50) && startPress(() => onChange(Math.min(50, countRef.current + 1)))}
+                    onTouchStart={() => (!locked && countRef.current < 50) && startPress(() => onChange(Math.min(50, countRef.current + 1)))}
+                    onMouseUp={stopPress}
+                    onMouseLeave={stopPress}
+                    onTouchEnd={stopPress}
+                    disabled={locked || count >= 50}
                     className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold transition-all cursor-pointer"
-                    disabled={count >= 50}
                     style={{
-                        background: count >= 50 ? "rgba(168,255,120,0.05)" : "rgba(168,255,120,0.15)",
-                        color: count >= 50 ? "rgba(168,255,120,0.3)" : "#a8ff78",
+                        background: count >= 50 && !locked ? "rgba(168,255,120,0.05)" : "rgba(168,255,120,0.15)",
+                        color: count >= 50 || locked ? "rgba(168,255,120,0.3)" : "#a8ff78",
+                        cursor: count >= 50 || locked ? "not-allowed" : "pointer",
                         border: "1px solid rgba(168,255,120,0.3)",
                     }}
                 >+</button>
@@ -529,6 +557,141 @@ function PlantTooltip({ plant, top, sun, water, fertilizer }: {
     );
 }
 
+function WelcomeModal({ onClose }: { onClose: () => void }) {
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const t = setTimeout(() => setVisible(true), 60);
+        return () => clearTimeout(t);
+    }, []);
+
+    const handleClose = () => {
+        setVisible(false);
+        setTimeout(onClose, 350);
+    };
+
+    return (
+        <div
+            style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 1000,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                
+                padding: "20px",
+                background: "rgba(4, 10, 0, 0.5)",
+                backdropFilter: "blur(6px)",
+                opacity: visible ? 1 : 0,
+                transition: "opacity 0.35s ease",
+            }}
+        >
+            <div
+                style={{
+                    maxWidth: "500px",
+                    width: "100%",
+                    background: "linear-gradient(160deg, #0d1f04 0%, #0a1600 100%)",
+                    border: "1px solid rgba(168,255,120,0.25)",
+                    borderRadius: "20px",
+                    padding: "40px 36px 32px",
+                    boxShadow: "0 0 80px rgba(168,255,120,0.08), 0 30px 60px rgba(0,0,0,0.6)",
+                    transform: visible ? "translateY(0) scale(1)" : "translateY(16px) scale(0.98)",
+                    transition: "transform 0.4s cubic-bezier(0.34, 1.36, 0.64, 1), opacity 0.35s ease",
+                    opacity: visible ? 1 : 0,
+                }}
+            >
+
+
+                <div style={{ marginBottom: "6px", textAlign: "center" }}>
+                    <span style={{
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.25em",
+                        textTransform: "uppercase",
+                        color: "rgba(168,255,120,0.4)",
+                    }}>
+                        Garden Lab
+                    </span>
+                </div>
+                <h3 style={{
+                    margin: "0 0 30px",
+                    fontSize: "clamp(1.2rem, 4vw, 1.7rem)",
+                    fontWeight: 900,
+                    lineHeight: 1.15,
+                    letterSpacing: "-0.01em",
+                    background: "linear-gradient(135deg, #a8ff78 30%, #78ffd6 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    textAlign: "center",
+                }}>
+                    Can you trust your data?
+                </h3>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "25px", marginBottom: "32px" }}>
+                    {[
+                        {
+
+                            text: "Each plant you put in the ground is one observation. Is it thriving?",
+                        },
+                        {
+
+                            text: "Coincidence or maybe not? Think of it like surveying one person: useful, but one answer rarely tells the full story. So, plant more seeds and you'll get an idea of how well a species does in a given environment. That's statistical power in action. The graph shows your certainty.",
+                        },
+                        {
+
+                            text: "But... real life isn't a controlled lab. Sometimes unexpected things mess with your results. Toggle randomness to trigger events and watch what happens.",
+                        },
+
+                    ].map(({  text }) => (
+                        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+                            <p style={{
+                                margin: 0,
+                                fontSize: "13.5px",
+                                lineHeight: 2,
+                                color: "rgba(168,255,120,0.72)",
+                                fontWeight: 400,
+                                textAlign: "justify",
+                            }}>
+                                {text}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+
+                <button
+                    onClick={handleClose}
+                    style={{
+                        width: "100%",
+                        padding: "14px 24px",
+                        borderRadius: "12px",
+                        border: "none",
+                        background: "linear-gradient(135deg, #a8ff78, #78ffd6)",
+                        color: "#0a1a00",
+                        fontSize: "13px",
+                        fontWeight: 900,
+                        letterSpacing: "0.15em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        boxShadow: "0 0 30px rgba(168,255,120,0.25)",
+                        transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={e => {
+                        (e.target as HTMLButtonElement).style.boxShadow = "0 0 40px rgba(168,255,120,0.45)";
+                        (e.target as HTMLButtonElement).style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={e => {
+                        (e.target as HTMLButtonElement).style.boxShadow = "0 0 30px rgba(168,255,120,0.25)";
+                        (e.target as HTMLButtonElement).style.transform = "translateY(0)";
+                    }}
+                >
+                    Ready to grow?
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function GardenSimulator() {
     const [showPlants, setShowPlants] = useState(true);
@@ -715,7 +878,7 @@ export default function GardenSimulator() {
                         updated.push({
                             thriving,
                             baseRoll,
-                            isDead: prob < 0.2,
+                            isDead: prob <= 0,
                             opacity: thriving ? 0.85 + (1 - baseRoll) * 0.13 : 0.22 + baseRoll * 0.12,
                             scale: thriving ? 0.7 + (1 - baseRoll) * 0.5 : 0.35 + baseRoll * 0.25,
                             flip: Math.random() < 0.5,
@@ -819,8 +982,11 @@ export default function GardenSimulator() {
 
     const selectedStats = selectedPlantId ? stats.find(s => s.plant.id === selectedPlantId) : null;
 
+    const [showWelcome, setShowWelcome] = useState(true);
+
     return (
         <div className="min-h-screen overflow-x-hidden" style={{ color: "#a8ff78" }}>
+            {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
 
             {/* Title */}
             <header
@@ -917,7 +1083,7 @@ export default function GardenSimulator() {
                         ↺ NEW EXPERIMENT
                     </button>
 
-                    <div className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase cursor-pointer flex justify-center items-center py-0">
+                    <div className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase  flex justify-center items-center py-0">
                         SELECT SEEDS
                     </div>
 
@@ -932,6 +1098,7 @@ export default function GardenSimulator() {
                                     sun={sun}
                                     water={water}
                                     fertilizer={fertilizer}
+                                    locked={conditionsLocked}
                                 />
                             ))}
                         </div>
@@ -1240,6 +1407,44 @@ export default function GardenSimulator() {
                             </div>
                         </div>
                     )}
+
+                    {simulated && !showPlants && (() => {
+                        const allDead = PLANTS.every(plant => {
+                            const outs = outcomes[plant.id] || [];
+                            return outs.length === 0 || outs.every(o => !o.thriving);
+                        });
+
+                        if (!allDead) return null;
+
+                        return (
+                            <div className="absolute inset-0 flex flex-col gap-3 justify-center items-center z-[100]"
+                                style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+                                <div className="text-center">
+                                    <div className="text-lg font-black tracking-widest uppercase mb-1"
+                                        style={{ color: "#ff7070" }}>
+                                        EXPERIMENT OVER
+                                    </div>
+                                    <div className="text-xs tracking-widest uppercase"
+                                        style={{ color: "rgba(255,112,112,0.6)" }}>
+                                        ALL PLANTS FAILED
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={reset}
+                                    className="py-2 px-5 rounded-lg text-xs font-black tracking-widest uppercase cursor-pointer transition-all"
+                                    style={{
+                                        background: "rgba(255,80,80,0.15)",
+                                        border: "1.5px solid rgba(255,80,80,0.5)",
+                                        color: "#ff7070",
+                                        boxShadow: "0 0 20px rgba(255,80,80,0.2)",
+                                    }}
+                                >
+                                    ↺ START NEW EXPERIMENT
+                                </button>
+                            </div>
+                        );
+                    })()}
+
                 </div>
 
                 {/* ── Right: stats ─────────────────────────────────────────────────── */}
@@ -1273,14 +1478,14 @@ export default function GardenSimulator() {
                         </div>
                     </div>
 
-                    {simulated && (
-                        <BetaDistributionGraph
-                            thriving={selectedStats?.thriving ?? 0}
-                            total={selectedStats?.total ?? 0}
-                            label={selectedStats?.plant.label ?? ""}
-                            expectedProb={selectedStats ? selectedStats.expectedProb / 100 : undefined}
-                        />
-                    )}
+
+                    <BetaDistributionGraph
+                        thriving={selectedStats?.thriving ?? 0}
+                        total={selectedStats?.total ?? 0}
+                        label={selectedStats?.plant.label ?? ""}
+                        expectedProb={selectedStats ? selectedStats.expectedProb / 100 : undefined}
+                    />
+
 
                     <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-center" style={{ color: "rgba(168,255,120,0.6)" }}>
                         EXPECTED
@@ -1289,7 +1494,7 @@ export default function GardenSimulator() {
                         {stats.map(({ plant, total, thriving, expectedProb, observedProb }) => {
                             const hasSims = simulated && total > 0;
                             const hasEvents = randomnessEnabled && eventLog.filter(Boolean).length > 0;
-                            const showGap = hasSims && hasEvents && observedProb !== expectedProb;
+
                             return (
                                 <div
                                     key={plant.id}
@@ -1322,12 +1527,13 @@ export default function GardenSimulator() {
                                             style={{
                                                 width: `${expectedProb}%`,
                                                 background: expectedProb >= 70 ? "#a8ff78" : expectedProb >= 40 ? "#ffcc44" : "#ff7070",
-                                                opacity: showGap ? 0.5 : 1,
+                                                opacity: 1,
                                             }}
                                         />
                                     </div>
 
-                                    {showGap && (
+
+                                    {hasSims && (
                                         <>
                                             <div className="h-1 rounded-sm overflow-hidden" style={{ background: "rgba(168,255,120,0.05)" }}>
                                                 <div
@@ -1338,22 +1544,19 @@ export default function GardenSimulator() {
                                                     }}
                                                 />
                                             </div>
-                                             <div className="flex justify-between items-center mt-0.5">
-            <div className="text-[9px]" style={{ color: "rgba(168,255,120,0.5)" }}>
-                {hasSims ? `${thriving}/${total} thriving` : ""}
-            </div>
-            <div className="text-[10px] font-bold" style={{ color: observedProb >= 70 ? "rgba(168,255,120,0.9)" : observedProb >= 40 ? "rgba(255,204,68,0.9)" : "rgba(255,112,112,0.9)" }}>
-                {observedProb}%
-            </div>
-        </div>
-    </>
-)}
 
-{hasSims && !showGap && (
-    <div className="text-[9px] mt-0.5" style={{ color: "rgba(168,255,120,0.5)" }}>
-        {thriving}/{total} thriving
-    </div>
-)}
+                                            <div className="flex justify-between items-center mt-2">
+                                                <div className="text-[9px]" style={{ color: "rgba(168,255,120,0.5)" }}>
+                                                    {hasSims ? `${thriving}/${total} thriving` : ""}
+                                                </div>
+                                                <div className="text-[10px] font-bold" style={{ color: observedProb >= 70 ? "rgba(168,255,120,0.9)" : observedProb >= 40 ? "rgba(255,204,68,0.9)" : "rgba(255,112,112,0.9)" }}>
+                                                    {observedProb}%
+                                                </div>
+                                            </div>
+
+                                        </>
+
+                                    )}
 
                                 </div>
                             );

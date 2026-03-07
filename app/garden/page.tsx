@@ -43,6 +43,10 @@ interface PlantOutcome {
     flip?: boolean;
     // base roll stored so we can re-evaluate when events hit
     baseRoll: number;
+    // ms stagger before grow animation fires — derived from baseRoll at creation time
+    growDelay: number;
+    // flips to true one rAF after creation, triggering the CSS scale/opacity transition
+    planted: boolean;
 }
 
 type RandomEvent = "storm" | "sunflare" | "pests" | "drought" | null;
@@ -460,7 +464,6 @@ function BetaDistributionGraph({ thriving, total, label, expectedProb }: {
                             strokeDasharray="4,3"
                             opacity="0.85"
                         />
-
                     </g>
                 )}
 
@@ -469,8 +472,6 @@ function BetaDistributionGraph({ thriving, total, label, expectedProb }: {
                     <text key={v} x={v / 100 * width} y={height + 10} textAnchor="middle" fill="rgba(168,255,120,0.4)" fontSize="7">{v}%</text>
                 ))}
             </svg>
-
-            {/* Legend for expected vs observed */}
 
             <div className="flex items-center gap-3 px-1 mb-1">
                 <div className="flex items-center gap-1">
@@ -579,7 +580,6 @@ function WelcomeModal({ onClose }: { onClose: () => void }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                
                 padding: "20px",
                 background: "rgba(4, 10, 0, 0.5)",
                 backdropFilter: "blur(6px)",
@@ -601,8 +601,6 @@ function WelcomeModal({ onClose }: { onClose: () => void }) {
                     opacity: visible ? 1 : 0,
                 }}
             >
-
-
                 <div style={{ marginBottom: "6px", textAlign: "center" }}>
                     <span style={{
                         fontSize: "10px",
@@ -630,21 +628,11 @@ function WelcomeModal({ onClose }: { onClose: () => void }) {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "25px", marginBottom: "32px" }}>
                     {[
-                        {
-
-                            text: "Each plant you put in the ground is one observation. Is it thriving?",
-                        },
-                        {
-
-                            text: "Coincidence or maybe not? Think of it like surveying one person: useful, but one answer rarely tells the full story. So, plant more seeds and you'll get an idea of how well a species does in a given environment. That's statistical power in action. The graph shows your certainty.",
-                        },
-                        {
-
-                            text: "But... real life isn't a controlled lab. Sometimes unexpected things mess with your results. Toggle randomness to trigger events and watch what happens.",
-                        },
-
-                    ].map(({  text }) => (
-                        <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+                        { text: "Each plant you put in the ground is one observation. Is it thriving?" },
+                        { text: "Coincidence or maybe not? Think of it like surveying one person: useful, but one answer rarely tells the full story. So, plant more seeds and you'll get an idea of how well a species does in a given environment. That's statistical power in action. The graph shows your certainty." },
+                        { text: "But... real life isn't a controlled lab. Sometimes unexpected things mess with your results. Toggle randomness to trigger events and watch what happens." },
+                    ].map(({ text }, index) => (
+                        <div key={index} style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
                             <p style={{
                                 margin: 0,
                                 fontSize: "13.5px",
@@ -694,31 +682,42 @@ function WelcomeModal({ onClose }: { onClose: () => void }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function GardenSimulator() {
+
+    const [mode, setMode] = useState<"explore" | "experiment">("explore");
+    const experimentRunning = mode === "experiment";
+    const [exploreRandomnessEnabled, setExploreRandomnessEnabled] = useState(false);
+    const randomnessEnabled = experimentRunning ? true : exploreRandomnessEnabled;
+
+    const [sun, setSun] = useState<ConditionLevel>(1);
+    const [water, setWater] = useState<ConditionLevel>(1);
+    const [fertilizer, setFertilizer] = useState<ConditionLevel>(1);
+    const [controlsOpen] = useState(true);
+
     const [showPlants, setShowPlants] = useState(true);
     const [seedCounts, setSeedCounts] = useState<Record<string, number>>(
         Object.fromEntries(PLANTS.map((p) => [p.id, 0]))
     );
-    const [sun, setSun] = useState<ConditionLevel>(1);
-    const [water, setWater] = useState<ConditionLevel>(1);
-    const [fertilizer, setFertilizer] = useState<ConditionLevel>(1);
-    const [randomnessEnabled, setRandomnessEnabled] = useState(false);
+    const [simulated, setSimulated] = useState(false);
+    const [positionSeed] = useState(() => Math.floor(Math.random() * 99999));
+    const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
 
     const [randomEvent, setRandomEvent] = useState<RandomEvent>(null);
-    const [outcomes, setOutcomes] = useState<Record<string, PlantOutcome[]>>({});
-    const [positionSeed] = useState(() => Math.floor(Math.random() * 99999));
-    const [simulated, setSimulated] = useState(false);
-    const [conditionsLocked, setConditionsLocked] = useState(false);
     const [eventAnim, setEventAnim] = useState(false);
-    const [controlsOpen] = useState(true);
-    const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
     const [eventLog, setEventLog] = useState<RandomEvent[]>([]);
+    const [outcomes, setOutcomes] = useState<Record<string, PlantOutcome[]>>({});
     const [experimentHistory, setExperimentHistory] = useState<ExperimentRecord[]>([]);
     const [showHistory, setShowHistory] = useState(false);
+
+    const startExperiment = () => {
+        setMode("experiment");
+        if (showPlants && totalSeeds > 0) simulateNew();
+    };
+
     const gardenRef = useRef<HTMLDivElement>(null);
 
     const handleToggleRandomness = () => {
-        if (conditionsLocked) return;
-        setRandomnessEnabled(v => !v);
+        if (experimentRunning) return;
+        setExploreRandomnessEnabled(v => !v);
         if (randomnessEnabled) {
             setRandomEvent(null);
         }
@@ -833,7 +832,6 @@ export default function GardenSimulator() {
 
     const simulate = useCallback(() => {
         setShowPlants(false);
-        setConditionsLocked(true);
         setOutcomes((prevOutcomes) => {
             const newOutcomes: Record<string, PlantOutcome[]> = {};
             PLANTS.forEach((plant) => {
@@ -846,6 +844,7 @@ export default function GardenSimulator() {
                     return {
                         ...prev,
                         thriving,
+                        planted: false,
                         opacity: thriving ? 0.85 + (1 - prev.baseRoll) * 0.13 : 0.22 + prev.baseRoll * 0.12,
                         scale: thriving ? 0.7 + (1 - prev.baseRoll) * 0.5 : 0.35 + prev.baseRoll * 0.25,
                     };
@@ -866,6 +865,7 @@ export default function GardenSimulator() {
                 const prob = calcSuccessProb(plant, sun, water, fertilizer, randomnessEnabled ? eventLog : []);
 
                 const existing = prevOutcomes[plant.id] || [];
+                // Keep existing plants unchanged (already planted: true)
                 const updated = existing.slice(0, count).map((prev) => ({ ...prev }));
                 if (count > existing.length) {
                     const newPositions = generatePlantPositions(
@@ -875,9 +875,14 @@ export default function GardenSimulator() {
                     newPositions.forEach((pos) => {
                         const baseRoll = Math.random();
                         const thriving = baseRoll < prob;
+                        // Stagger each plant's grow animation by its baseRoll:
+                        // low rolls (lucky plants) sprout first, high rolls come later.
+                        const growDelay = Math.round(baseRoll * 1000000);
                         updated.push({
                             thriving,
                             baseRoll,
+                            growDelay,
+                            planted: false, // starts invisible; flips true after rAF below
                             isDead: prob <= 0,
                             opacity: thriving ? 0.85 + (1 - baseRoll) * 0.13 : 0.22 + baseRoll * 0.12,
                             scale: thriving ? 0.7 + (1 - baseRoll) * 0.5 : 0.35 + baseRoll * 0.25,
@@ -891,15 +896,31 @@ export default function GardenSimulator() {
             return newOutcomes;
         });
         setSimulated(true);
+
+        // Two rAF ticks: first ensures React has committed the scale-0 DOM state,
+        // second gives the browser a paint cycle so CSS transitions see 0 → target.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                setOutcomes((prev) => {
+                    const next: Record<string, PlantOutcome[]> = {};
+                    PLANTS.forEach((plant) => {
+                        next[plant.id] = (prev[plant.id] || []).map((o) =>
+                            o.planted ? o : { ...o, planted: true }
+                        );
+                    });
+                    return next;
+                });
+            });
+        });
     }, [seedCounts, sun, water, fertilizer, randomnessEnabled, eventLog, positionSeed]);
 
     useEffect(() => {
-        if (simulated) simulate();
+        if (simulated && !experimentRunning) simulate();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sun, water, fertilizer, simulated]);
 
     useEffect(() => {
-        if (simulated) simulateNew();
+        if (simulated && !experimentRunning) simulateNew();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seedCounts, simulated]);
 
@@ -913,7 +934,6 @@ export default function GardenSimulator() {
         setEventAnim(true);
         setTimeout(() => setEventAnim(false), 2000);
 
-        // Re-evaluate outcomes immediately with the new event applied
         if (simulated) {
             setOutcomes((prev) => reEvaluateOutcomes(prev, sun, water, fertilizer, newLog));
         }
@@ -938,6 +958,8 @@ export default function GardenSimulator() {
             };
             setExperimentHistory(prev => [...prev, record]);
         }
+        setExploreRandomnessEnabled(false);
+        setMode("explore");
         setSeedCounts(Object.fromEntries(PLANTS.map((p) => [p.id, 0])));
         setSun(1);
         setWater(1);
@@ -946,19 +968,15 @@ export default function GardenSimulator() {
         setOutcomes({});
         setShowPlants(true);
         setSimulated(false);
-        setConditionsLocked(false);
         setEventLog([]);
     };
 
-    // Expected = conditions only, no events
-    // Observed = conditions + events
     const stats = PLANTS.map((plant) => {
         const outs = outcomes[plant.id] || [];
         const total = outs.length;
         const thriving = outs.filter((o) => o.thriving).length;
         const expectedProb = calcBaseProb(plant, sun, water, fertilizer);
         const observedProb = calcSuccessProb(plant, sun, water, fertilizer, randomnessEnabled ? eventLog : []);
-
         return { plant, total, thriving, expectedProb: Math.round(expectedProb * 100), observedProb: Math.round(observedProb * 100) };
     });
 
@@ -979,16 +997,13 @@ export default function GardenSimulator() {
     };
 
     const isDragging = dragRef.current !== null;
-
     const selectedStats = selectedPlantId ? stats.find(s => s.plant.id === selectedPlantId) : null;
-
     const [showWelcome, setShowWelcome] = useState(true);
 
     return (
         <div className="min-h-screen overflow-x-hidden" style={{ color: "#a8ff78" }}>
             {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
 
-            {/* Title */}
             <header
                 className="text-center px-4 pt-6 pb-3"
                 style={{ borderBottom: "1px solid rgba(168,255,120,0.15)" }}
@@ -1005,11 +1020,10 @@ export default function GardenSimulator() {
                 </h1>
             </header>
 
-            {/* Main layout */}
             <div className="grid grid-cols-1 md:grid-cols-[280px_1fr_260px] md:grid-rows-[auto_1fr] gap-3 px-4 py-3 max-w-[1280px] mx-auto"
                 style={{ maxHeight: "calc(100vh - 150px)" }}>
 
-                {/* ── Top centre: environmental controls ──────────────────────────── */}
+                {/* ── Top centre: environmental controls ── */}
                 <section
                     className="p-3 md:px-4 rounded-xl md:col-start-2 md:row-start-1"
                     style={{
@@ -1018,21 +1032,21 @@ export default function GardenSimulator() {
                     }}
                 >
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 md:gap-4 items-center">
-                        <ConditionControl icon="sun.png" label="Sunlight" value={sun} onChange={conditionsLocked ? () => { } : setSun} locked={conditionsLocked} />
-                        <ConditionControl icon="water.png" label="Water" value={water} onChange={conditionsLocked ? () => { } : setWater} locked={conditionsLocked} />
-                        <ConditionControl icon="fertilizer.png" label="Fertilizer" value={fertilizer} onChange={conditionsLocked ? () => { } : setFertilizer} locked={conditionsLocked} />
+                        <ConditionControl icon="sun.png" label="Sunlight" value={sun} onChange={experimentRunning ? () => { } : setSun} locked={experimentRunning} />
+                        <ConditionControl icon="water.png" label="Water" value={water} onChange={experimentRunning ? () => { } : setWater} locked={experimentRunning} />
+                        <ConditionControl icon="fertilizer.png" label="Fertilizer" value={fertilizer} onChange={experimentRunning ? () => { } : setFertilizer} locked={experimentRunning} />
 
                         <div className="flex flex-col gap-1 mx-auto lg:ml-2 w-35">
                             <button
                                 onClick={handleToggleRandomness}
-                                disabled={conditionsLocked}
+                                disabled={experimentRunning}
                                 className="py-2 px-3 rounded-lg text-xs font-bold tracking-wide uppercase whitespace-nowrap transition-all"
                                 style={{
-                                    background: conditionsLocked ? "rgba(255,180,0,0.05)" : "rgba(255,180,0,0.15)",
-                                    border: `1.5px solid ${conditionsLocked ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6)"}`,
-                                    color: conditionsLocked ? "rgba(255,180,0,0.4)" : "#ffcc44",
-                                    cursor: conditionsLocked ? "not-allowed" : "pointer",
-                                    opacity: conditionsLocked ? 0.5 : 1,
+                                    background: experimentRunning ? "rgba(255,180,0,0.05)" : "rgba(255,180,0,0.15)",
+                                    border: `1.5px solid ${experimentRunning ? "rgba(255,180,0,0.2)" : "rgba(255,180,0,0.6)"}`,
+                                    color: experimentRunning ? "rgba(255,180,0,0.4)" : "#ffcc44",
+                                    cursor: experimentRunning ? "not-allowed" : "pointer",
+                                    opacity: experimentRunning ? 0.5 : 1,
                                 }}
                             >
                                 {randomnessEnabled ? "RANDOMNESS ON" : "RANDOMNESS OFF"}
@@ -1055,7 +1069,7 @@ export default function GardenSimulator() {
                         </div>
                     </div>
                     <div className="flex items-center justify-center">
-                        {conditionsLocked && (
+                        {experimentRunning && (
                             <div className="text-[9px] tracking-widest uppercase flex items-center gap-1 mt-3 sm:mt-0"
                                 style={{ color: "#ffcc44" }}>
                                 experiment running
@@ -1064,26 +1078,40 @@ export default function GardenSimulator() {
                     </div>
                 </section>
 
-                {/* ── Left: seed selection ─────────────────────────────────────── */}
+                {/* ── Left: seed selection ── */}
                 <aside
                     className="flex flex-col gap-2 p-3 rounded-xl md:col-start-1 md:row-start-1 md:row-span-2"
-                    style={{
-                        border: "1px solid rgba(168,255,120,0.15)",
-                    }}
+                    style={{ border: "1px solid rgba(168,255,120,0.15)" }}
                 >
-                    <button
-                        onClick={reset}
-                        className="w-full py-2 rounded-lg text-xs font-bold tracking-widest uppercase cursor-pointer transition-all"
-                        style={{
-                            background: "rgba(255,80,80,0.12)",
-                            border: "1.5px solid rgba(255,80,80,0.4)",
-                            color: "#ff7070",
-                        }}
-                    >
-                        ↺ NEW EXPERIMENT
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => { setMode("explore"); reset(); }}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold tracking-widest uppercase cursor-pointer transition-all"
+                            style={{
+                                background: mode === "explore" ? "rgba(168,255,120,0.15)" : "rgba(168,255,120,0.04)",
+                                border: `1.5px solid ${mode === "explore" ? "rgba(168,255,120,0.6)" : "rgba(168,255,120,0.15)"}`,
+                                color: mode === "explore" ? "#a8ff78" : "rgba(168,255,120,0.4)",
+                            }}
+                        >
+                            {simulated ? "RESET" : "EXPLORE"}
+                        </button>
+                        <button
+                            onClick={() => experimentRunning ? reset() : startExperiment()}
+                            disabled={!experimentRunning && totalSeeds === 0}
+                            className="flex-1 py-2 rounded-lg text-xs font-bold tracking-widest uppercase cursor-pointer transition-all"
+                            style={{
+                                background: experimentRunning ? "rgba(255,80,80,0.12)" : "rgba(255,204,68,0.12)",
+                                border: `1.5px solid ${experimentRunning ? "rgba(255,80,80,0.4)" : "rgba(255,204,68,0.4)"}`,
+                                color: experimentRunning ? "#ff7070" : "#ffcc44",
+                                opacity: !experimentRunning && totalSeeds === 0 ? 0.4 : 1,
+                                cursor: !experimentRunning && totalSeeds === 0 ? "not-allowed" : "pointer",
+                            }}
+                        >
+                            {experimentRunning ? "END EXPERIMENT" : "NEW EXPERIMENT"}
+                        </button>
+                    </div>
 
-                    <div className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase  flex justify-center items-center py-0">
+                    <div className="bg-transparent border-none text-[#a8ff78] text-xs font-bold tracking-[0.2em] uppercase flex justify-center items-center py-0">
                         SELECT SEEDS
                     </div>
 
@@ -1098,14 +1126,14 @@ export default function GardenSimulator() {
                                     sun={sun}
                                     water={water}
                                     fertilizer={fertilizer}
-                                    locked={conditionsLocked}
+                                    locked={experimentRunning}
                                 />
                             ))}
                         </div>
                     )}
                 </aside>
 
-                {/* ── Centre: garden plot ──────────────────────────────────────────── */}
+                {/* ── Centre: garden plot ── */}
                 <div className="relative md:col-start-2 md:row-start-2">
                     <div
                         ref={gardenRef}
@@ -1118,7 +1146,7 @@ export default function GardenSimulator() {
                             cursor: isDragging ? "grabbing" : "default",
                         }}
                     >
-                        {/* Soil texture overlay */}
+                        {/* Soil texture */}
                         <div
                             className="absolute inset-0 pointer-events-none"
                             style={{
@@ -1171,6 +1199,13 @@ export default function GardenSimulator() {
                         {PLANTS.map((plant) =>
                             (outcomes[plant.id] || []).map((outcome, i) => {
                                 const isDraggingThis = dragRef.current?.plantId === plant.id && dragRef.current?.index === i;
+
+                                const displayScale = !outcome.planted ? 0 : outcome.scale * 1;
+                                const displayOpacity = !outcome.planted ? 0 : outcome.opacity;
+                                const transitionStyle = isDraggingThis
+                                    ? "transform 0.1s ease"
+                                    : "transform 70s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 50s cubic-bezier(0.34, 1.56, 0.64, 1)";
+
                                 return (
                                     <div
                                         key={`${plant.id}-${i}`}
@@ -1181,8 +1216,9 @@ export default function GardenSimulator() {
                                             left: `${outcome.x}%`,
                                             top: `${outcome.y}%`,
                                             zIndex: isDraggingThis ? 200 : outcome.zIndex,
-                                            transform: `translate(-50%, -50%) scale(${outcome.scale * (isDraggingThis ? 1.2 : 1)}) rotate(${outcome.rotation}deg)`,
-                                            transition: isDraggingThis ? "transform 0.1s ease" : "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                                            transform: `translate(-50%, -50%) scale(${displayScale}) rotate(${outcome.rotation}deg)`,
+                                            opacity: displayOpacity,
+                                            transition: transitionStyle,
                                             cursor: isDraggingThis ? "grabbing" : "grab",
                                             userSelect: "none",
                                             touchAction: "none",
@@ -1197,12 +1233,11 @@ export default function GardenSimulator() {
                                                 height: "clamp(28px, 4vw, 60px)",
                                                 objectFit: "contain",
                                                 display: "block",
-                                                opacity: outcome.opacity,
-                                                transform: `${outcome.flip ? "scaleX(-1) " : ""}scale(${outcome.scale * (isDraggingThis ? 1.2 : 1)}) rotate(${outcome.rotation}deg)`,
+                                                transform: outcome.flip ? "scaleX(-1)" : undefined,
                                                 filter: outcome.thriving
                                                     ? isDraggingThis ? "drop-shadow(0 4px 12px rgba(168,255,120,0.8))" : ""
                                                     : `grayscale(80%) brightness(0.5) blur(0.5px)${isDraggingThis ? " drop-shadow(0 4px 12px rgba(255,100,100,0.6))" : ""}`,
-                                                transition: "all 0.5s ease",
+                                                transition: "filter 0.5s ease",
                                                 pointerEvents: "none",
                                             }}
                                         />
@@ -1422,10 +1457,6 @@ export default function GardenSimulator() {
                                 <div className="text-center">
                                     <div className="text-lg font-black tracking-widest uppercase mb-1"
                                         style={{ color: "#ff7070" }}>
-                                        EXPERIMENT OVER
-                                    </div>
-                                    <div className="text-xs tracking-widest uppercase"
-                                        style={{ color: "rgba(255,112,112,0.6)" }}>
                                         ALL PLANTS FAILED
                                     </div>
                                 </div>
@@ -1439,15 +1470,14 @@ export default function GardenSimulator() {
                                         boxShadow: "0 0 20px rgba(255,80,80,0.2)",
                                     }}
                                 >
-                                    ↺ START NEW EXPERIMENT
+                                    ↺ START AGAIN
                                 </button>
                             </div>
                         );
                     })()}
-
                 </div>
 
-                {/* ── Right: stats ─────────────────────────────────────────────────── */}
+                {/* ── Right: stats ── */}
                 <aside
                     className="flex flex-col gap-1.5 p-3 rounded-xl md:row-span-2"
                     style={{
@@ -1478,7 +1508,6 @@ export default function GardenSimulator() {
                         </div>
                     </div>
 
-
                     <BetaDistributionGraph
                         thriving={selectedStats?.thriving ?? 0}
                         total={selectedStats?.total ?? 0}
@@ -1486,14 +1515,12 @@ export default function GardenSimulator() {
                         expectedProb={selectedStats ? selectedStats.expectedProb / 100 : undefined}
                     />
 
-
                     <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-center" style={{ color: "rgba(168,255,120,0.6)" }}>
                         EXPECTED
                     </div>
                     <div className="overflow-y-auto sidebar-scroll">
                         {stats.map(({ plant, total, thriving, expectedProb, observedProb }) => {
                             const hasSims = simulated && total > 0;
-                            const hasEvents = randomnessEnabled && eventLog.filter(Boolean).length > 0;
 
                             return (
                                 <div
@@ -1513,14 +1540,12 @@ export default function GardenSimulator() {
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-[10px] font-bold tracking-wide" style={{ color: "#a8ff78" }}>{plant.label}</span>
                                         <div className="flex items-center gap-1">
-
                                             <span className="text-[10px] font-bold" style={{ color: expectedProb >= 70 ? "#a8ff78" : expectedProb >= 40 ? "#ffcc44" : "#ff7070" }}>
                                                 {expectedProb}%
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Expected bar */}
                                     <div className="h-1 rounded-sm overflow-hidden mb-0.5" style={{ background: "rgba(168,255,120,0.1)" }}>
                                         <div
                                             className="h-full rounded-sm transition-all duration-500"
@@ -1531,7 +1556,6 @@ export default function GardenSimulator() {
                                             }}
                                         />
                                     </div>
-
 
                                     {hasSims && (
                                         <>
@@ -1553,11 +1577,8 @@ export default function GardenSimulator() {
                                                     {observedProb}%
                                                 </div>
                                             </div>
-
                                         </>
-
                                     )}
-
                                 </div>
                             );
                         })}

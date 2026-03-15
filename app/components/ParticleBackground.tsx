@@ -16,8 +16,8 @@ export default function ParticleBackground() {
     let p5Instance: any;
 
     // Dynamically import p5 only on client
-    import('p5').then(p5Module => {
-      const p5 = p5Module.default;
+    import('p5').then(mod => {
+      const p5 = mod.default ?? mod;
 
       const sketch = (p: any) => {
         class Particle {

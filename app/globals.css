@@ -39,8 +39,8 @@ body,
   background: var(--background);
   color: var(--foreground);
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
-
 
 
 
@@ -556,6 +556,64 @@ input[type="range"]::-moz-range-thumb:active {
 .history-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(168,255,120,0.4);
 }
+
+
+.prev-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+
+/* First frame visible when idle */
+.prev-img-1 {
+  opacity: 1;
+}
+
+/* Slow cinematic preview */
+.sim-card:hover .prev-img-1 {
+  animation: previewVideo 12s infinite;
+}
+
+.sim-card:hover .prev-img-2 {
+  animation: previewVideo 12s infinite 4s;
+}
+
+.sim-card:hover .prev-img-3 {
+  animation: previewVideo 12s infinite 8s;
+}
+
+@keyframes previewVideo {
+
+  /* fade in slowly */
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  /* hold like a frame */
+  40% {
+    opacity: 1;
+    transform:  scale(1.06);
+  }
+
+  /* slow dissolve */
+  55% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+
 
 @media (max-width: 768px) {
   .top-mobile {

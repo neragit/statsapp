@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ParticleBackground from './components/ParticleBackground';
 
@@ -40,8 +40,8 @@ const sims: Sim[] = [
     type: 'Correlation',
     question: 'Can one data point fool you?',
     desc: 'Move the stars and watch the relationship change.',
-    concept: 'Pearson r · Regression · Residuals · Outlier influence · Spearman ρ · Correlation vs causation',
-previews: ['/prev-s1.png', '/prev-s2.png', '/prev-s3.png'],
+    concept: 'Pearson r · Regression · Residuals · Outlier influence · Spearman rank correlation · Correlation vs causation',
+    previews: ['/prev-s1.png', '/prev-s2.png', '/prev-s3.png'],
 
     cx: 35, cy: 45,
     live: true,
@@ -71,6 +71,9 @@ previews: ['/prev-s1.png', '/prev-s2.png', '/prev-s3.png'],
     live: false,
   },
 ];
+
+
+
 
 // ─── Dot Chart ────────────────────────────────────────────────────────────────
 function DotChart({ activeId, onHover }: {
@@ -239,6 +242,7 @@ function SimCard({ sim, isActive, onHover }: {
       ].join(' ')}
       style={{ gridTemplateColumns: '80px 1fr 1fr auto auto', color: 'inherit' }}
     >
+
       {/* Number */}
       <div className="p-8 flex items-center ">
         <span
@@ -263,9 +267,12 @@ function SimCard({ sim, isActive, onHover }: {
       {/* Description — hidden on mobile */}
       <div className="p-8 flex-col justify-center hidden md:flex border-r border-stone-700">
 
-        <span className="inline-flex items-center font-normal uppercase w-fit font-[Kanit] text-xs tracking-[0.1em] text-[#c9a000] px-[0.55rem] py-[0.18rem]">
+        <span className={`inline-flex items-center font-normal uppercase w-fit font-[Kanit] text-xs tracking-[0.1em] px-[0.55rem] py-[0.18rem]
+        ${isActive ? 'text-[#c9a000]' : 'text-stone-400'}`}>
           // {sim.concept}
         </span>
+
+
       </div>
 
       {/* Preview images — only if previews exist */}
@@ -274,6 +281,25 @@ function SimCard({ sim, isActive, onHover }: {
           <img src={sim.previews[0]} alt="" className="prev-img prev-img-1" />
           <img src={sim.previews[1]} alt="" className="prev-img prev-img-2" />
           <img src={sim.previews[2]} alt="" className="prev-img prev-img-3" />
+
+          {/*
+ <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" overflow="visible">
+    <rect
+  className="border-draw-rect"
+  fill="none"
+  stroke="#c9a000"
+  strokeWidth="1"
+  width="calc(100% - 2px)"
+  height="calc(100% - 2px)"
+  x="1"
+  y="1"
+  strokeDasharray="9999"
+  strokeDashoffset="9999"
+  style={{ transition: 'stroke-dashoffset 5s ease-out' }}
+/>
+  </svg>
+  */}
+
         </div>
       )}
 
@@ -284,7 +310,9 @@ function SimCard({ sim, isActive, onHover }: {
         >
           ↗
         </span>
-      </div> 
+      </div>
+
+
     </Link>
   );
 }
@@ -292,6 +320,33 @@ function SimCard({ sim, isActive, onHover }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ItDependsHome() {
   const [activeId, setActiveId] = useState<number | null>(1);
+
+  useEffect(() => {
+    function updatePerimeters() {
+      document.querySelectorAll('.sim-card').forEach(card => {
+        const el = card as HTMLElement;
+        const rect = card.querySelector('.border-draw-rect') as SVGGeometryElement | null;
+        if (!rect) return;
+        const p = 2 * (el.offsetWidth + el.offsetHeight);
+        rect.setAttribute('stroke-dasharray', String(p));
+        rect.setAttribute('stroke-dashoffset', String(p));
+
+        card.addEventListener('mouseenter', () => {
+          (rect as any).style.transition = 'stroke-dashoffset 1s ease-out';
+          (rect as any).style.strokeDashoffset = '0';
+        });
+        card.addEventListener('mouseleave', () => {
+          (rect as any).style.transition = 'stroke-dashoffset 0.3s ease-in';
+          (rect as any).style.strokeDashoffset = String(p);
+        });
+      });
+    }
+
+    updatePerimeters();
+    window.addEventListener('resize', updatePerimeters);
+    return () => window.removeEventListener('resize', updatePerimeters);
+  }, []);
+
 
   return (
     <>
@@ -435,8 +490,8 @@ export default function ItDependsHome() {
               <span className="text-[#f0efe8] font-normal">It Depends</span>{' '}
               is built on a different assumption: understanding comes from experience,
               not explanation. This is a place where you can build intuition and critical
-              thinking. Each simulation asks the same underlying question from a different angle. <em>Can you trust what you're seeing?</em> 
-              <br/>The answer is almost always: <em>it depends</em>. </p>
+              thinking. Each simulation asks the same underlying question from a different angle. <em>Can you trust what you're seeing?</em>
+              <br />The answer is almost always: <em>it depends</em>. </p>
 
             <p className="font-[Mukta] text-base  text-[#b8b7b0]">
               These simulations are for anyone curious, anyone who ever glazed over in a stats class, or left wondering if the problem was

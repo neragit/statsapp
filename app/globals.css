@@ -558,6 +558,7 @@ input[type="range"]::-moz-range-thumb:active {
 }
 
 
+
 .prev-img {
   position: absolute;
   inset: 0;
@@ -567,52 +568,32 @@ input[type="range"]::-moz-range-thumb:active {
   opacity: 0;
 }
 
-/* First frame visible when idle */
-.prev-img-1 {
+.sim-card:not(:hover) .prev-img-1 {
   opacity: 1;
 }
 
-/* Slow cinematic preview */
-.sim-card:hover .prev-img-1 {
-  animation: previewVideo 12s infinite;
-}
-
 .sim-card:hover .prev-img-2 {
-  animation: previewVideo 12s infinite 4s;
+  animation: previewVideo 9s infinite 0s;
+  animation-fill-mode: backwards;
 }
 
 .sim-card:hover .prev-img-3 {
-  animation: previewVideo 12s infinite 8s;
+  animation: previewVideo 9s infinite 3s;
+  animation-fill-mode: backwards;
+}
+
+.sim-card:hover .prev-img-1 {
+  animation: previewVideo 9s infinite 6s;
+  animation-fill-mode: backwards;
 }
 
 @keyframes previewVideo {
-
-  /* fade in slowly */
-  0% {
-    opacity: 0;
-    transform: scale(1);
-  }
-
-  15% {
-    opacity: 1;
-  }
-
-  /* hold like a frame */
-  40% {
-    opacity: 1;
-    transform:  scale(1.06);
-  }
-
-  /* slow dissolve */
-  55% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 0;
-  }
+  0%   { opacity: 0; transform: scale(1.04); }
+  15%   { opacity: 1; transform: scale(1.05); } /* fade in quickly */
+  28%  { opacity: 1; transform: scale(1.06); } /* hold for ~2.5s */
+  33%  { opacity: 0; transform: scale(1.07); } /* fade out by 3s mark */
+  100% { opacity: 0; transform: scale(1.07); } /* stay hidden for remaining 6s */
 }
-
 
 
 @media (max-width: 768px) {
